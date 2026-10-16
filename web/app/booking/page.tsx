@@ -1,8 +1,9 @@
+
 "use client";
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -24,7 +25,7 @@ type Passenger = {
   gender: string;
 };
 
-export default function BookingPage() {
+function BookingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -35,7 +36,8 @@ export default function BookingPage() {
   const date = searchParams.get("date") ?? "";
 
   const fareParam = Number(searchParams.get("fare") ?? "0");
-  const fare = Number.isFinite(fareParam) && fareParam >= 0 ? fareParam : 0;
+  const fare =
+    Number.isFinite(fareParam) && fareParam >= 0 ? fareParam : 0;
 
   const passengerParam = Number(searchParams.get("passengers") ?? "1");
   const passengerCount =
@@ -50,7 +52,7 @@ export default function BookingPage() {
       name: "",
       age: "",
       gender: "",
-    })),
+    }))
   );
 
   const [error, setError] = useState("");
@@ -58,12 +60,12 @@ export default function BookingPage() {
   function updatePassenger(
     index: number,
     field: keyof Passenger,
-    value: string,
+    value: string
   ) {
     setPassengers((current) =>
       current.map((passenger, i) =>
-        i === index ? { ...passenger, [field]: value } : passenger,
-      ),
+        i === index ? { ...passenger, [field]: value } : passenger
+      )
     );
   }
 
@@ -382,5 +384,19 @@ export default function BookingPage() {
         </aside>
       </section>
     </main>
+  );
+}
+
+export default function BookingPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[#f7f8fc] p-8 text-center text-slate-600">
+          Loading booking details...
+        </main>
+      }
+    >
+      <BookingContent />
+    </Suspense>
   );
 }

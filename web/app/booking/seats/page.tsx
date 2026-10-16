@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -79,7 +79,7 @@ function getInitialSelection(value: string | null): number[] {
     .sort((a, b) => a - b);
 }
 
-export default function SeatSelectionPage() {
+function SeatSelectionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -587,5 +587,19 @@ export default function SeatSelectionPage() {
         </aside>
       </section>
     </main>
+  );
+}
+
+export default function SeatSelectionPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-[50vh] items-center justify-center bg-[#f7f8fc] px-5 text-slate-600">
+          <p className="text-sm font-semibold">Loading seat selection...</p>
+        </main>
+      }
+    >
+      <SeatSelectionContent />
+    </Suspense>
   );
 }

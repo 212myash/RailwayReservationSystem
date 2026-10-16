@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -77,7 +77,7 @@ const DEMO_TRAINS: Train[] = [
   },
 ];
 
-export default function TrainsPage() {
+function TrainsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -379,4 +379,23 @@ export default function TrainsPage() {
 
 function MapPinIcon() {
   return <TrainFront size={15} className="shrink-0 text-slate-400" />;
+}
+
+
+export default function TrainsPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-w-0 flex-1 bg-[#f7f8fc] text-slate-900">
+          <section className="mx-auto max-w-7xl px-5 py-16 text-center sm:px-8">
+            <p className="text-sm font-semibold text-slate-600">
+              Loading train results...
+            </p>
+          </section>
+        </main>
+      }
+    >
+      <TrainsContent />
+    </Suspense>
+  );
 }
