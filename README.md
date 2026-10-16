@@ -1,8 +1,19 @@
 # 🚆 RailConnect — Railway Reservation System
 
-A railway reservation system built using **Next.js, TypeScript, Tailwind CSS, MongoDB, C++, and Data Structures & Algorithms (DSA)**.
+<p align="center">
+  <img
+    src="images/homepage.png"
+    alt="RailConnect Railway Reservation System Homepage"
+    width="100%"
+  />
+</p>
 
-RailConnect aims to provide a modern railway booking experience with user authentication, train browsing, seat selection, ticket booking, and booking history. The project also includes a separate C++ implementation to demonstrate core DSA concepts.
+<p align="center">
+  A modern railway reservation platform built with Next.js,
+  TypeScript, MongoDB, C++ and Data Structures & Algorithms.
+</p>
+
+---
 
 ## 📌 Table of Contents
 
