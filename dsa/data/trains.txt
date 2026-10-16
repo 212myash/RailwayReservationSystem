@@ -1,0 +1,5 @@
+12001|Shatabdi Express|Delhi|Bhopal|06:00|14:00|850|10
+12317|Akal Takht Express|Patna|Amritsar|21:00|08:00|550|10
+12951|Mumbai Rajdhani|Mumbai|Delhi|16:00|08:00|1200|10
+12273|Duronto Express|Delhi|Howrah|12:00|06:00|950|10
+12506|North East Express|Delhi|Guwahati|07:00|10:00|700|10

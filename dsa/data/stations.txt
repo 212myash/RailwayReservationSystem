@@ -1,0 +1,5 @@
+NDLS|New Delhi|Delhi|Delhi
+PNBE|Patna Junction|Patna|Bihar
+ASR|Amritsar Junction|Amritsar|Punjab
+BPL|Bhopal Junction|Bhopal|Madhya Pradesh
+HWH|Howrah Junction|Kolkata|West Bengal
