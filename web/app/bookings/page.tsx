@@ -48,6 +48,40 @@ function MyBookingsContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoggedOut, setIsLoggedOut] = useState(false);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [cancelMessage, setCancelMessage] = useState("");
+  const [bookingToCancel, setBookingToCancel] = useState<Booking | null>(null);
+
+  async function cancelBooking(booking: Booking) {
+    setCancellingId(booking.id);
+    setCancelMessage("");
+
+    try {
+      const response = await fetch(
+        `/api/bookings/${encodeURIComponent(booking.id)}/cancel`,
+        { method: "PATCH", cache: "no-store" }
+      );
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        setCancelMessage(data.message || "Could not cancel this booking.");
+        return;
+      }
+
+      setBookings((current) =>
+        current.map((item) =>
+          item.id === booking.id ? { ...item, status: "cancelled" } : item
+        )
+      );
+      setCancelMessage(`Booking ${booking.bookingReference} cancelled successfully.`);
+      setBookingToCancel(null);
+    } catch (error) {
+      console.error("Unable to cancel booking:", error);
+      setCancelMessage("Server se connect nahi ho paya. Dobara try karo.");
+    } finally {
+      setCancellingId(null);
+    }
+  }
 
   async function loadBookings() {
     setIsLoading(true);
@@ -170,6 +204,19 @@ function MyBookingsContent() {
                 history.
               </p>
             </div>
+          </div>
+        )}
+
+        {cancelMessage && (
+          <div
+            role="status"
+            className={`mb-5 rounded-xl border p-4 text-sm font-medium ${
+              cancelMessage.toLowerCase().includes("successfully")
+                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                : "border-red-200 bg-red-50 text-red-800"
+            }`}
+          >
+            {cancelMessage}
           </div>
         )}
 
@@ -395,9 +442,98 @@ function MyBookingsContent() {
                       </div>
                     </details>
                   )}
+
+                  {booking.status === "confirmed" && (
+                    <div className="mt-6 flex justify-end border-t border-slate-100 pt-5">
+                      <button
+                        type="button"
+                        onClick={() => { setCancelMessage(""); setBookingToCancel(booking); }}
+                        disabled={cancellingId !== null}
+                        className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-700 transition hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <XCircle size={17} />
+                        {cancellingId === booking.id ? "Cancelling..." : "Cancel booking"}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </article>
             ))}
+          </div>
+        )}
+
+        {bookingToCancel && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
+            role="presentation"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget && cancellingId === null) {
+                setBookingToCancel(null);
+              }
+            }}
+          >
+            <section
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="cancel-booking-title"
+              className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl"
+            >
+              <div className="bg-gradient-to-r from-red-600 to-rose-600 px-6 py-7 text-white">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/20 bg-white/15">
+                  <XCircle size={30} />
+                </div>
+                <h2 id="cancel-booking-title" className="mt-4 text-2xl font-black">
+                  Cancel this ticket?
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-red-50">
+                  Please check your journey details before confirming cancellation.
+                </p>
+              </div>
+
+              <div className="space-y-4 px-6 py-6">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Booking reference
+                  </p>
+                  <p className="mt-1 font-extrabold text-slate-900">
+                    {bookingToCancel.bookingReference}
+                  </p>
+                  <p className="mt-3 font-bold text-slate-900">
+                    {bookingToCancel.trainName}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {bookingToCancel.from} → {bookingToCancel.to}
+                  </p>
+                  <p className="mt-2 text-sm text-slate-600">
+                    Journey date: {formatDate(bookingToCancel.journeyDate)}
+                  </p>
+                </div>
+
+                <p className="text-sm leading-6 text-slate-600">
+                  This will mark the booking as cancelled in RailConnect. This demo does not process real railway cancellations or refunds.
+                </p>
+
+                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    disabled={cancellingId !== null}
+                    onClick={() => setBookingToCancel(null)}
+                    className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                  >
+                    Keep ticket
+                  </button>
+                  <button
+                    type="button"
+                    disabled={cancellingId !== null}
+                    onClick={() => void cancelBooking(bookingToCancel)}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-red-700 disabled:cursor-wait disabled:opacity-60"
+                  >
+                    <XCircle size={17} />
+                    {cancellingId === bookingToCancel.id ? "Cancelling..." : "Yes, cancel ticket"}
+                  </button>
+                </div>
+              </div>
+            </section>
           </div>
         )}
 
