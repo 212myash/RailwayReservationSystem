@@ -11,6 +11,7 @@ import {
   UserRound,
   RefreshCw,
   AlertCircle,
+  Search,
 } from "lucide-react";
 
 type Booking = {
@@ -40,6 +41,12 @@ const quickLinks = [
     icon: TrainFront,
   },
   {
+    title: "PNR Status",
+    description: "Track live reservation and seats.",
+    href: "/pnr-status",
+    icon: Search,
+  },
+  {
     title: "My Bookings",
     description: "View and manage your reservations.",
     href: "/bookings",
@@ -52,7 +59,6 @@ const quickLinks = [
     icon: MapPin,
   },
 ];
-
 function getTodayInIndia() {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Kolkata",
@@ -233,7 +239,7 @@ export default function DashboardPage() {
         <section className="mt-10">
           <h2 className="text-xl font-extrabold text-slate-900">Quick actions</h2>
           <p className="mt-1 text-sm text-slate-500">Choose what you want to do next.</p>
-          <div className="mt-5 grid gap-5 md:grid-cols-3">
+          <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {quickLinks.map((item) => {
               const Icon = item.icon;
               return (

@@ -13,6 +13,7 @@ import {
   LogIn,
   LogOut,
   MapPin,
+  Search,
   Menu,
   Settings,
   Ticket,
@@ -43,9 +44,15 @@ const navigation = [
   },
   {
     label: "Stations",
-    href: "/#plan-your-trip",
+    href: "/stations",
     Icon: MapPin,
-    action: "plan",
+    action: "stations",
+  },
+  {
+    label: "PNR Status",
+    href: "/pnr-status",
+    Icon: Search,
+    action: "pnr",
   },
   {
     label: "My Bookings",
@@ -54,7 +61,6 @@ const navigation = [
     action: "bookings",
   },
 ];
-
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();

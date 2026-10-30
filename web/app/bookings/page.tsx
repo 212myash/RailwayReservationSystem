@@ -10,6 +10,7 @@ import {
   Clock3,
 
   RefreshCw,
+  Search,
   Ticket,
   TrainFront,
   Users,
@@ -443,8 +444,16 @@ function MyBookingsContent() {
                     </details>
                   )}
 
-                  {booking.status === "confirmed" && (
-                    <div className="mt-6 flex justify-end border-t border-slate-100 pt-5">
+                  <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5">
+                    <Link
+                      href={`/pnr-status?pnr=${encodeURIComponent(booking.bookingReference)}`}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 transition hover:text-blue-900 hover:underline"
+                    >
+                      <Search size={14} />
+                      Track PNR Status
+                    </Link>
+
+                    {booking.status === "confirmed" && (
                       <button
                         type="button"
                         onClick={() => { setCancelMessage(""); setBookingToCancel(booking); }}
@@ -454,8 +463,8 @@ function MyBookingsContent() {
                         <XCircle size={17} />
                         {cancellingId === booking.id ? "Cancelling..." : "Cancel booking"}
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </article>
             ))}

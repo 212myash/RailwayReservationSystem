@@ -1,4 +1,3 @@
-
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -6,12 +5,14 @@ import {
   MapPin,
   TrainFront,
   Ticket,
+  Search,
 } from "lucide-react";
 
 const exploreLinks = [
   { label: "Home", href: "/", Icon: Home },
   { label: "Find Trains", href: "/trains", Icon: TrainFront },
   { label: "Stations", href: "/stations", Icon: MapPin },
+  { label: "PNR Status", href: "/pnr-status", Icon: Search },
   { label: "My Bookings", href: "/bookings", Icon: Ticket },
 ];
 
@@ -59,7 +60,7 @@ export default function Footer() {
 
             <ul className="mt-5 space-y-3.5">
               {exploreLinks.map(({ label, href, Icon }) => (
-                <li key={href}>
+                <li key={label}>
                   <Link
                     href={href}
                     className="group inline-flex items-center gap-2.5 text-sm text-slate-500 transition hover:translate-x-1 hover:text-blue-700"
@@ -100,12 +101,8 @@ export default function Footer() {
             © {new Date().getFullYear()} RailConnect. Academic project.
           </p>
 
-          <p className="flex items-center gap-1.5">
-            Built with
-            <span className="font-semibold text-slate-600">Next.js</span>,
-            <span className="font-semibold text-slate-600">TypeScript</span>
-            and
-            <span className="font-semibold text-slate-600">Tailwind CSS</span>.
+          <p className="flex items-center gap-2">
+            Built for seamless railway reservations
           </p>
         </div>
       </div>
