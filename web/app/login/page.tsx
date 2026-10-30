@@ -82,15 +82,8 @@ export default function LoginPage() {
         !requestedRedirect.includes("\\") &&
         !requestedRedirect.includes("\0");
 
-      // Only allow the booking page as a return destination.
-      const bookingRedirect =
-        isSafeInternalPath && requestedRedirect.startsWith("/booking")
-          ? requestedRedirect
-          : null;
-
-      const destination =
-        bookingRedirect ??
-        (sessionData.user.role === "admin" ? "/admin" : "/dashboard");
+      // Allow safe internal relative paths for seamless post-login redirection.
+      const destination = isSafeInternalPath ? requestedRedirect : "/dashboard";
 
       // Full navigation refreshes the navbar and reads the new session.
       window.location.replace(destination);

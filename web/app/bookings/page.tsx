@@ -8,7 +8,7 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock3,
-  MapPin,
+
   RefreshCw,
   Ticket,
   TrainFront,

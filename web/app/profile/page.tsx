@@ -169,8 +169,7 @@ export default function ProfilePage() {
             </div>
 
             <div className="mt-6 rounded-xl bg-blue-50 p-4 text-sm text-blue-900">
-              Profile editing aur password management hum next step mein add
-              karenge.
+              To update your name or change your password, visit Account Settings below.
             </div>
 
             <div className="mt-6 flex flex-wrap gap-3">
