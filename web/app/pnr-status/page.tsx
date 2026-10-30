@@ -9,6 +9,8 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock3,
+  Download,
+  Printer,
   LoaderCircle,
   Search,
   Ticket,
@@ -427,13 +429,25 @@ function PnrStatusContent() {
                   ← Go to My Bookings
                 </Link>
 
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
-                >
-                  Print Status Details
-                </button>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
+                  >
+                    <Printer size={15} />
+                    Print Ticket
+                  </button>
+
+                  <a
+                    href={`/api/bookings/${encodeURIComponent(booking.bookingReference)}/ticket`}
+                    download={`RailConnect_Ticket_${booking.bookingReference}.pdf`}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-blue-700 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-800"
+                  >
+                    <Download size={15} />
+                    Download E-Ticket (PDF)
+                  </a>
+                </div>
               </div>
             </div>
           </article>

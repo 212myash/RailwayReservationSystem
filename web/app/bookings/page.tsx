@@ -8,6 +8,7 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock3,
+  Download,
 
   RefreshCw,
   Search,
@@ -445,13 +446,24 @@ function MyBookingsContent() {
                   )}
 
                   <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5">
-                    <Link
-                      href={`/pnr-status?pnr=${encodeURIComponent(booking.bookingReference)}`}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 transition hover:text-blue-900 hover:underline"
-                    >
-                      <Search size={14} />
-                      Track PNR Status
-                    </Link>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <Link
+                        href={`/pnr-status?pnr=${encodeURIComponent(booking.bookingReference)}`}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 transition hover:text-blue-900 hover:underline"
+                      >
+                        <Search size={14} />
+                        Track PNR Status
+                      </Link>
+
+                      <a
+                        href={`/api/bookings/${encodeURIComponent(booking.id)}/ticket`}
+                        download={`RailConnect_Ticket_${booking.bookingReference}.pdf`}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-50/50 hover:text-blue-700"
+                      >
+                        <Download size={14} />
+                        Download E-Ticket (PDF)
+                      </a>
+                    </div>
 
                     {booking.status === "confirmed" && (
                       <button
@@ -463,8 +475,7 @@ function MyBookingsContent() {
                         <XCircle size={17} />
                         {cancellingId === booking.id ? "Cancelling..." : "Cancel booking"}
                       </button>
-                    )}
-                  </div>
+                    )}                  </div>
                 </div>
               </article>
             ))}
