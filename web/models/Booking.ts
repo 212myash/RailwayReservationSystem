@@ -5,6 +5,8 @@ export interface IBookingPassenger {
   name: string;
   age: number;
   gender: "Male" | "Female" | "Other";
+  berthPreference?: string;
+  allocatedBerth?: string;
 }
 
 export interface IBooking {
@@ -18,6 +20,7 @@ export interface IBooking {
   passengers: IBookingPassenger[];
   passengerCount: number;
   coach: string;
+  coachClass?: string;
   seats: string[];
   totalFare: number;
   status: "confirmed" | "cancelled";
@@ -34,6 +37,8 @@ const PassengerSchema = new Schema<IBookingPassenger>(
       enum: ["Male", "Female", "Other"],
       required: true,
     },
+    berthPreference: { type: String, default: "No preference" },
+    allocatedBerth: { type: String, default: null },
   },
   { _id: false }
 );
@@ -68,6 +73,7 @@ const BookingSchema = new Schema<IBooking>(
     },
     passengerCount: { type: Number, required: true, min: 1, max: 6 },
     coach: { type: String, required: true, trim: true },
+    coachClass: { type: String, default: "SL", trim: true },
     seats: {
       type: [String],
       required: true,

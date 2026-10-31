@@ -4,6 +4,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import StationCombobox from "@/components/StationCombobox";
 import {
   ArrowLeftRight,
   ArrowRight,
@@ -249,27 +250,17 @@ export default function Home() {
             <div className="grid gap-4 lg:grid-cols-[1fr_44px_1fr_1fr_0.85fr] lg:items-end">
               {/* FROM */}
               <div className="min-w-0">
-                <label
-                  htmlFor="from"
-                  className="mb-2.5 block text-sm font-bold text-slate-700"
-                >
-                  From
-                </label>
-                <div className="group rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 transition duration-200 focus-within:border-blue-400 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(37,99,235,0.08)] hover:border-slate-300">
-                  <input
-                    id="from"
-                    value={from}
-                    onChange={(event) => setFrom(event.target.value)}
-                    placeholder="Departure station"
-                    autoComplete="off"
-                    maxLength={100}
-                    className="w-full bg-transparent text-sm font-bold text-slate-900 outline-none placeholder:font-medium placeholder:text-slate-400"
-                  />
-                  <p className="mt-2 flex items-center gap-1.5 text-xs text-slate-400">
-                    <MapPin size={14} />
-                    City or station code
-                  </p>
-                </div>
+                <StationCombobox
+                  id="from"
+                  label="From"
+                  value={from}
+                  onChange={(val) => {
+                    setFrom(val);
+                    setError("");
+                  }}
+                  placeholder="Departure station or code"
+                  excludeCode={to}
+                />
               </div>
 
               {/* SWAP */}
@@ -278,34 +269,24 @@ export default function Home() {
                 onClick={swapStations}
                 aria-label="Swap departure and destination"
                 title="Swap stations"
-                className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-blue-100 bg-white text-blue-700 shadow-sm transition duration-300 hover:rotate-180 hover:border-blue-300 hover:bg-blue-50 lg:mb-5"
+                className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-blue-100 bg-white text-blue-700 shadow-sm transition duration-300 hover:rotate-180 hover:border-blue-300 hover:bg-blue-50 lg:mb-1"
               >
                 <ArrowLeftRight size={19} />
               </button>
 
               {/* TO */}
               <div className="min-w-0">
-                <label
-                  htmlFor="to"
-                  className="mb-2.5 block text-sm font-bold text-slate-700"
-                >
-                  To
-                </label>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 transition duration-200 focus-within:border-blue-400 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(37,99,235,0.08)] hover:border-slate-300">
-                  <input
-                    id="to"
-                    value={to}
-                    onChange={(event) => setTo(event.target.value)}
-                    placeholder="Destination station"
-                    autoComplete="off"
-                    maxLength={100}
-                    className="w-full bg-transparent text-sm font-bold text-slate-900 outline-none placeholder:font-medium placeholder:text-slate-400"
-                  />
-                  <p className="mt-2 flex items-center gap-1.5 text-xs text-slate-400">
-                    <Navigation size={14} />
-                    Where are you going?
-                  </p>
-                </div>
+                <StationCombobox
+                  id="to"
+                  label="To"
+                  value={to}
+                  onChange={(val) => {
+                    setTo(val);
+                    setError("");
+                  }}
+                  placeholder="Destination station or code"
+                  excludeCode={from}
+                />
               </div>
 
               {/* DATE */}

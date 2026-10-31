@@ -5,6 +5,7 @@ import { connectDB } from "@/lib/mongodb";
 import { getAuthSession } from "@/lib/auth";
 import Booking from "@/models/Booking";
 import { createNotification } from "@/lib/notifications";
+import { confirmBookedSeats } from "@/lib/seat-inventory";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -183,9 +184,12 @@ export async function POST(request: NextRequest) {
       name: string;
       age: number;
       gender: "Male" | "Female" | "Other";
+      berthPreference?: string;
+      allocatedBerth?: string;
     }[] = [];
 
-    for (const passenger of passengers) {
+    for (let i = 0; i < passengers.length; i++) {
+      const passenger = passengers[i];
       if (
         !passenger ||
         typeof passenger.name !== "string" ||
@@ -209,6 +213,16 @@ export async function POST(request: NextRequest) {
         name: passenger.name.trim(),
         age: Number(passenger.age),
         gender: passenger.gender as "Male" | "Female" | "Other",
+        berthPreference:
+          typeof passenger.berthPreference === "string"
+            ? passenger.berthPreference
+            : "No preference",
+        allocatedBerth:
+          typeof passenger.berth === "string"
+            ? passenger.berth
+            : seats[i]
+            ? String(seats[i])
+            : undefined,
       });
     }
 
@@ -244,6 +258,34 @@ export async function POST(request: NextRequest) {
       .slice(0, 8)
       .toUpperCase()}`;
 
+    const coachClass =
+      typeof body.coachClass === "string" && body.coachClass.trim()
+        ? body.coachClass.trim().toUpperCase()
+        : "SL";
+
+    // Parse seats into numeric seat numbers and berth types
+    const parsedSeats = seats.map((seatStr: string) => {
+      const match = seatStr.match(/^\d+/);
+      const seatNum = match ? Number(match[0]) : NaN;
+      const typeMatch = seatStr.match(/\((.*?)\)/);
+      const berthType = typeMatch ? typeMatch[1].trim() : "LB";
+      return { seatNumber: seatNum, berthType };
+    });
+
+    const validSeatsToConfirm = parsedSeats.filter((s) => !Number.isNaN(s.seatNumber));
+
+    if (validSeatsToConfirm.length > 0) {
+      await confirmBookedSeats({
+        trainNumber: trainNumber.trim(),
+        journeyDate: date,
+        coachId: coach.trim(),
+        coachClass,
+        seats: validSeatsToConfirm,
+        bookingReference,
+        userId: session.userId,
+      });
+    }
+
     const booking = await Booking.create({
       userId: new mongoose.Types.ObjectId(session.userId),
       bookingReference,
@@ -255,6 +297,7 @@ export async function POST(request: NextRequest) {
       passengers: validPassengers,
       passengerCount: validPassengers.length,
       coach: coach.trim(),
+      coachClass,
       seats: seats.map((seat: string) => seat.trim()),
       totalFare,
       status: "confirmed",

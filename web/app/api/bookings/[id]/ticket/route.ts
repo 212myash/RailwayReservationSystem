@@ -74,6 +74,7 @@ export async function GET(
       journeyDate: booking.journeyDate,
       passengerCount: booking.passengerCount,
       coach: booking.coach,
+      coachClass: booking.coachClass,
       seats: booking.seats,
       totalFare: booking.totalFare,
       status: booking.status,

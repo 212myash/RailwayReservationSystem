@@ -5,6 +5,7 @@ import { connectDB } from "@/lib/mongodb";
 import { getAuthSession } from "@/lib/auth";
 import Booking from "@/models/Booking";
 import { createNotification } from "@/lib/notifications";
+import { releaseBookedSeats } from "@/lib/seat-inventory";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -71,6 +72,9 @@ export async function PATCH(
         { status: 409 }
       );
     }
+
+    // Safely release booked seats back to available inventory
+    await releaseBookedSeats(booking.bookingReference);
 
     // Safely dispatch persistent cancellation notification
     await createNotification({

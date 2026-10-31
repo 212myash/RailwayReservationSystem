@@ -52,3 +52,17 @@ export async function getAuthSession(): Promise<AuthSession | null> {
     return null;
   }
 }
+
+/**
+ * Validates active session and ensures the user possesses administrator privileges.
+ * Returns the verified AuthSession if role is "admin", or null otherwise.
+ */
+export async function getAdminSession(): Promise<AuthSession | null> {
+  const session = await getAuthSession();
+
+  if (!session || session.role !== "admin") {
+    return null;
+  }
+
+  return session;
+}

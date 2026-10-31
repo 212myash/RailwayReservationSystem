@@ -38,6 +38,7 @@ function BookingReviewContent() {
   const passengersCount = Number(searchParams.get("passengers") || 0);
   const fare = Number(searchParams.get("fare") || 0);
   const coach = searchParams.get("coach") || "S1";
+  const coachClass = searchParams.get("coachClass") || "SL";
 
   const seats = (searchParams.get("seats") || "")
     .split(",")
@@ -198,6 +199,7 @@ function BookingReviewContent() {
           })),
           passengerCount: passengersCount,
           coach,
+          coachClass,
           seats,
           fare,
         }),
@@ -443,9 +445,9 @@ function BookingReviewContent() {
               <div className="p-5">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
-                    <p className="text-xs text-slate-500">Coach</p>
+                    <p className="text-xs text-slate-500">Coach & Class</p>
                     <p className="mt-1 text-lg font-bold text-slate-900">
-                      {coach}
+                      Coach {coach} <span className="text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">({coachClass})</span>
                     </p>
                   </div>
 

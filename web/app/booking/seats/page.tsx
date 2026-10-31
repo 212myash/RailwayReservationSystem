@@ -1,82 +1,62 @@
-
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
+  Armchair,
   ArrowLeft,
   ArrowRight,
-  Armchair,
   CalendarDays,
-  Check,
-  Info,
+  Clock,
   MapPin,
-  ShieldCheck,
-  Ticket,
+  RefreshCw,
+  ShieldAlert,
   TrainFront,
   Users,
 } from "lucide-react";
+import CoachLayoutViewer, {
+  CoachBerthItem,
+} from "@/components/CoachLayoutViewer";
+import { CoachClass, COACH_CLASS_NAMES } from "@/lib/coach-templates";
 
-const TOTAL_BERTHS = 72;
-
-// Demo availability only. Real availability will come from the database later.
-const UNAVAILABLE_BERTHS = [
-  3, 8, 12, 17, 22, 28, 31, 37, 44, 49, 55, 63,
-];
-
-type BerthType = "LB" | "MB" | "UB" | "SL" | "SU";
-
-type Passenger = {
+interface Passenger {
   name: string;
   age: string;
   gender: string;
-  idType?: string;
-  idNumber?: string;
+  berthPreference?: string;
   berth?: string;
-};
-
-function getBerthType(berthNumber: number): BerthType {
-  const position = ((berthNumber - 1) % 8) + 1;
-
-  if (position === 1 || position === 4) return "LB";
-  if (position === 2 || position === 5) return "MB";
-  if (position === 3 || position === 6) return "UB";
-  if (position === 7) return "SL";
-
-  return "SU";
 }
 
-function getBerthLabel(berthNumber: number) {
-  const type = getBerthType(berthNumber);
-  const names: Record<BerthType, string> = {
-    LB: "Lower Berth",
-    MB: "Middle Berth",
-    UB: "Upper Berth",
-    SL: "Side Lower",
-    SU: "Side Upper",
+interface CoachOption {
+  coachId: string;
+  sequence: number;
+  layoutTemplateId: string;
+  templateName: string;
+  totalCapacity: number;
+}
+
+interface ClassOption {
+  coachClass: CoachClass;
+  className: string;
+  coaches: CoachOption[];
+}
+
+interface SeatMatrixResponse {
+  coach: CoachOption;
+  template: {
+    id: string;
+    name: string;
+    coachClass: CoachClass;
+    totalCapacity: number;
+    compartmentCount: number;
   };
-
-  return names[type];
-}
-
-function getInitialSelection(value: string | null): number[] {
-  if (!value) return [];
-
-  return value
-    .split(",")
-    .map((item) => {
-      const match = item.trim().match(/^\d+/);
-      return match ? Number(match[0]) : NaN;
-    })
-    .filter(
-      (number) =>
-        Number.isInteger(number) &&
-        number >= 1 &&
-        number <= TOTAL_BERTHS &&
-        !UNAVAILABLE_BERTHS.includes(number)
-    )
-    .filter((number, index, list) => list.indexOf(number) === index)
-    .sort((a, b) => a - b);
+  berths: CoachBerthItem[];
+  summary: {
+    totalCapacity: number;
+    availableCount: number;
+    lockedCount: number;
+    bookedCount: number;
+  };
 }
 
 function SeatSelectionContent() {
@@ -90,8 +70,7 @@ function SeatSelectionContent() {
   const date = searchParams.get("date") || "";
 
   const fareParam = Number(searchParams.get("fare") || "0");
-  const fare =
-    Number.isFinite(fareParam) && fareParam >= 0 ? fareParam : 0;
+  const fare = Number.isFinite(fareParam) && fareParam >= 0 ? fareParam : 0;
 
   const passengerParam = Number(searchParams.get("passengers") || "1");
   const passengerCount =
@@ -101,30 +80,41 @@ function SeatSelectionContent() {
       ? passengerParam
       : 1;
 
-  const passengerDetailsParam =
-    searchParams.get("passengerDetails") || "[]";
+  const passengerDetailsParam = searchParams.get("passengerDetails") || "[]";
 
-  const passengers = useMemo<Passenger[]>(() => {
+  const initialPassengers = useMemo<Passenger[]>(() => {
     try {
       const parsed: unknown = JSON.parse(passengerDetailsParam);
-
       if (Array.isArray(parsed)) {
         return parsed as Passenger[];
       }
-
       return [];
     } catch {
       return [];
     }
   }, [passengerDetailsParam]);
 
-  const [selectedBerths, setSelectedBerths] = useState<number[]>(() =>
-    getInitialSelection(searchParams.get("seats"))
-  );
-  const [error, setError] = useState("");
+  // Classes & Coaches available on this train
+  const [availableClasses, setAvailableClasses] = useState<ClassOption[]>([]);
+  const [selectedClass, setSelectedClass] = useState<CoachClass>("SL");
+  const [selectedCoachId, setSelectedCoachId] = useState<string>("");
+
+  // Live seat matrix for selected coach
+  const [matrixData, setMatrixData] = useState<SeatMatrixResponse | null>(null);
+  const [selectedBerths, setSelectedBerths] = useState<number[]>([]);
+
+  // Passenger preferences and seat mappings
+  const [preferences, setPreferences] = useState<Record<number, string>>({});
+
+  // Loading & Error states
+  const [isLoadingCoaches, setIsLoadingCoaches] = useState(true);
+  const [isLoadingSeats, setIsLoadingSeats] = useState(false);
+  const [isLocking, setIsLocking] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const formattedDate = date
     ? new Date(`${date}T00:00:00`).toLocaleDateString("en-IN", {
+        weekday: "short",
         day: "2-digit",
         month: "short",
         year: "numeric",
@@ -133,470 +123,730 @@ function SeatSelectionContent() {
 
   const totalFare = fare * passengerCount;
 
-  const toggleBerth = (berthNumber: number) => {
-    if (UNAVAILABLE_BERTHS.includes(berthNumber)) return;
+  // 1. Fetch available coach classes for this train
+  useEffect(() => {
+    let active = true;
 
-    setError("");
+    async function loadTrainCoaches() {
+      if (!trainNumber) return;
+      setIsLoadingCoaches(true);
+      setErrorMessage("");
+
+      try {
+        const res = await fetch(
+          `/api/trains/${encodeURIComponent(trainNumber)}/coaches`
+        );
+        const data = await res.json();
+
+        if (!active) return;
+
+        if (res.ok && data.success && data.availableClasses?.length > 0) {
+          const classes: ClassOption[] = data.availableClasses;
+          setAvailableClasses(classes);
+
+          // Default to first class (or SL if present)
+          const preferred =
+            classes.find((c) => c.coachClass === "SL") || classes[0];
+          setSelectedClass(preferred.coachClass);
+
+          if (preferred.coaches.length > 0) {
+            setSelectedCoachId(preferred.coaches[0].coachId);
+          }
+        } else {
+          setErrorMessage("Failed to load coaches for this train.");
+        }
+      } catch {
+        if (active) {
+          setErrorMessage("Could not connect to server to fetch train coaches.");
+        }
+      } finally {
+        if (active) setIsLoadingCoaches(false);
+      }
+    }
+
+    void loadTrainCoaches();
+
+    return () => {
+      active = false;
+    };
+  }, [trainNumber]);
+
+  // 2. When coach changes or date changes, load live seat matrix
+  useEffect(() => {
+    let active = true;
+
+    async function loadSeatMatrix() {
+      if (!trainNumber || !selectedCoachId || !date) return;
+
+      setIsLoadingSeats(true);
+      setErrorMessage("");
+
+      try {
+        const res = await fetch(
+          `/api/trains/${encodeURIComponent(
+            trainNumber
+          )}/seats?journeyDate=${encodeURIComponent(
+            date
+          )}&coachId=${encodeURIComponent(selectedCoachId)}`,
+          { cache: "no-store" }
+        );
+        const data = await res.json();
+
+        if (!active) return;
+
+        if (res.ok && data.success && data.matrix) {
+          setMatrixData(data.matrix);
+          // Preserve any selected berths that are still available
+          setSelectedBerths((prev) =>
+            prev.filter((num) => {
+              const b = data.matrix.berths.find(
+                (item: CoachBerthItem) => item.number === num
+              );
+              return b && (b.status === "available" || b.isLockedByMe);
+            })
+          );
+        } else {
+          setErrorMessage(
+            data.message || "Unable to fetch live seat availability for coach."
+          );
+        }
+      } catch {
+        if (active) {
+          setErrorMessage("Failed to reach server for seat availability.");
+        }
+      } finally {
+        if (active) setIsLoadingSeats(false);
+      }
+    }
+
+    void loadSeatMatrix();
+
+    return () => {
+      active = false;
+    };
+  }, [trainNumber, selectedCoachId, date]);
+
+  // Coaches in the currently selected class
+  const activeClassCoaches = useMemo(() => {
+    const cls = availableClasses.find((c) => c.coachClass === selectedClass);
+    return cls ? cls.coaches : [];
+  }, [availableClasses, selectedClass]);
+
+  // Handle class tab switch
+  function handleSelectClass(cls: CoachClass) {
+    if (cls === selectedClass) return;
+    setSelectedClass(cls);
+    setSelectedBerths([]); // Reset berth selection on class change
+
+    const matchingClass = availableClasses.find((c) => c.coachClass === cls);
+    if (matchingClass && matchingClass.coaches.length > 0) {
+      setSelectedCoachId(matchingClass.coaches[0].coachId);
+    }
+  }
+
+  // Handle berth toggle on coach layout
+  function handleToggleBerth(berthNumber: number) {
+    setErrorMessage("");
 
     setSelectedBerths((current) => {
       if (current.includes(berthNumber)) {
-        return current.filter((number) => number !== berthNumber);
+        return current.filter((num) => num !== berthNumber);
       }
 
       if (current.length >= passengerCount) {
-        setError(
-          `You can select only ${passengerCount} berth${
+        setErrorMessage(
+          `All ${passengerCount} berth${
             passengerCount > 1 ? "s" : ""
-          }.`
+          } selected. Click an existing selection to change it.`
         );
         return current;
       }
 
       return [...current, berthNumber].sort((a, b) => a - b);
     });
-  };
+  }
 
-  const handleContinue = () => {
-    setError("");
+  // Preference options according to selected class
+  const preferenceOptions = useMemo(() => {
+    switch (selectedClass) {
+      case "1A":
+        return [
+          { value: "No preference", label: "No preference" },
+          { value: "Lower Berth", label: "Cabin Lower Berth" },
+          { value: "Upper Berth", label: "Cabin Upper Berth" },
+          { value: "Cabin Preference", label: "4-Berth Cabin Preference" },
+          { value: "Coupe Preference", label: "2-Berth Coupe Preference" },
+        ];
+      case "2A":
+        return [
+          { value: "No preference", label: "No preference" },
+          { value: "Lower Berth", label: "Lower Berth (LB)" },
+          { value: "Upper Berth", label: "Upper Berth (UB)" },
+          { value: "Side Lower", label: "Side Lower (SL)" },
+          { value: "Side Upper", label: "Side Upper (SU)" },
+        ];
+      case "CC":
+        return [
+          { value: "No preference", label: "No preference" },
+          { value: "Window", label: "Window Seat" },
+          { value: "Aisle", label: "Aisle Seat" },
+        ];
+      case "2S":
+        return [
+          { value: "No preference", label: "No preference" },
+          { value: "Window", label: "Window Seat" },
+          { value: "Middle", label: "Middle Seat" },
+          { value: "Aisle", label: "Aisle Seat" },
+        ];
+      case "SL":
+      case "3A":
+      default:
+        return [
+          { value: "No preference", label: "No preference" },
+          { value: "Lower Berth", label: "Lower Berth (LB)" },
+          { value: "Middle Berth", label: "Middle Berth (MB)" },
+          { value: "Upper Berth", label: "Upper Berth (UB)" },
+          { value: "Side Lower", label: "Side Lower (SL)" },
+          { value: "Side Upper", label: "Side Upper (SU)" },
+        ];
+    }
+  }, [selectedClass]);
+
+  // Handle Proceed to Review with Atomic Seat Locking
+  async function handleContinue() {
+    setErrorMessage("");
 
     if (!trainNumber || !trainName || !from || !to || !date) {
-      setError(
-        "Train or journey details are missing. Please select your train again."
+      setErrorMessage(
+        "Train or journey details are missing. Please re-select your train."
       );
       return;
     }
 
     if (selectedBerths.length !== passengerCount) {
-      setError(
+      setErrorMessage(
         `Please select exactly ${passengerCount} berth${
           passengerCount > 1 ? "s" : ""
-        } to continue.`
+        } on the layout before continuing.`
       );
       return;
     }
 
-    if (passengers.length !== passengerCount) {
-      setError(
-        "Passenger details could not be verified. Please go back and enter them again."
+    if (initialPassengers.length !== passengerCount) {
+      setErrorMessage(
+        "Passenger details could not be verified. Please return to the previous step."
       );
       return;
     }
 
-    const berthDetails = selectedBerths.map((number) => ({
-      number,
-      type: getBerthType(number),
-      label: getBerthLabel(number),
-    }));
+    if (!matrixData) {
+      setErrorMessage("Coach layout data is unavailable. Please try again.");
+      return;
+    }
 
-    const params = new URLSearchParams({
-      trainNumber,
-      trainName,
-      from,
-      to,
-      date,
-      passengers: String(passengerCount),
-      fare: String(fare),
-      seats: berthDetails
-        .map((berth) => `${berth.number} (${berth.type})`)
-        .join(","),
-      berthDetails: JSON.stringify(berthDetails),
-      coach: "S1",
-      passengerDetails: JSON.stringify(passengers),
-    });
+    setIsLocking(true);
 
-    router.push(`/booking/review?${params.toString()}`);
-  };
+    try {
+      // Build berth specifications for locking
+      const seatsToLock = selectedBerths.map((seatNum) => {
+        const berthDef = matrixData.berths.find((b) => b.number === seatNum);
+        return {
+          seatNumber: seatNum,
+          berthType: berthDef?.type || "LB",
+        };
+      });
 
-  const renderBerth = (berthNumber: number) => {
-    const unavailable = UNAVAILABLE_BERTHS.includes(berthNumber);
-    const selected = selectedBerths.includes(berthNumber);
-    const berthType = getBerthType(berthNumber);
+      // Call Atomic Seat Locking API (10-minute hold)
+      const lockRes = await fetch(
+        `/api/trains/${encodeURIComponent(trainNumber)}/seats/lock`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            journeyDate: date,
+            coachId: selectedCoachId,
+            coachClass: selectedClass,
+            seats: seatsToLock,
+          }),
+        }
+      );
 
-    const berthClass = unavailable
-      ? "cursor-not-allowed border-slate-200 bg-slate-200 text-slate-400"
-      : selected
-        ? "border-blue-700 bg-blue-700 text-white shadow-md shadow-blue-700/20"
-        : "border-slate-200 bg-white text-slate-700 hover:border-blue-500 hover:bg-blue-50";
+      const lockData = await lockRes.json();
 
-    return (
-      <button
-        key={berthNumber}
-        type="button"
-        disabled={unavailable}
-        aria-label={`Berth ${berthNumber}, ${getBerthLabel(berthNumber)}${
-          unavailable
-            ? ", unavailable"
-            : selected
-              ? ", selected"
-              : ", available"
-        }`}
-        aria-pressed={selected}
-        title={`${getBerthLabel(berthNumber)}${
-          unavailable ? " - Unavailable" : ""
-        }`}
-        onClick={() => toggleBerth(berthNumber)}
-        className={`flex min-h-[68px] min-w-0 flex-col items-center justify-center gap-1 rounded-xl border p-1 transition sm:min-h-[76px] ${berthClass}`}
-      >
-        {selected ? <Check size={17} /> : <Armchair size={17} />}
-        <span className="text-sm font-extrabold">{berthNumber}</span>
-        <span className="text-[10px] font-bold sm:text-xs">
-          {berthType}
-        </span>
-      </button>
-    );
-  };
+      if (!lockRes.ok || !lockData.success) {
+        setErrorMessage(
+          lockData.message ||
+            "One or more of your selected berths was just booked by another user. Please select other berths."
+        );
+        // Refresh seat matrix to reflect latest inventory
+        const refreshRes = await fetch(
+          `/api/trains/${encodeURIComponent(
+            trainNumber
+          )}/seats?journeyDate=${encodeURIComponent(
+            date
+          )}&coachId=${encodeURIComponent(selectedCoachId)}`,
+          { cache: "no-store" }
+        );
+        const refreshData = await refreshRes.json();
+        if (refreshRes.ok && refreshData.success) {
+          setMatrixData(refreshData.matrix);
+        }
+        setIsLocking(false);
+        return;
+      }
 
-  const bays = Array.from({ length: 9 }, (_, index) => {
-    const first = index * 8 + 1;
+      // Prepare updated passengers with assigned berths and preferences
+      const updatedPassengers = initialPassengers.map((p, idx) => {
+        const assignedSeatNum = selectedBerths[idx];
+        const berthDef = matrixData.berths.find(
+          (b) => b.number === assignedSeatNum
+        );
+        const berthLabel = berthDef ? `${assignedSeatNum} (${berthDef.label})` : `Seat ${assignedSeatNum}`;
 
-    return {
-      number: index + 1,
-      mainBerths: [first, first + 1, first + 2, first + 3, first + 4, first + 5],
-      sideBerths: [first + 6, first + 7],
-    };
-  });
+        return {
+          ...p,
+          berth: berthLabel,
+          berthPreference: preferences[idx] || "No preference",
+        };
+      });
+
+      const berthDetails = selectedBerths.map((seatNum) => {
+        const berthDef = matrixData.berths.find((b) => b.number === seatNum);
+        return {
+          number: seatNum,
+          type: berthDef?.type || "LB",
+          label: berthDef?.label || "Berth",
+        };
+      });
+
+      const seatsFormatted = selectedBerths
+        .map((num) => {
+          const b = matrixData.berths.find((item) => item.number === num);
+          return `${num} (${b?.type || "BERTH"})`;
+        })
+        .join(",");
+
+      const params = new URLSearchParams({
+        trainNumber,
+        trainName,
+        from,
+        to,
+        date,
+        passengers: String(passengerCount),
+        fare: String(fare),
+        coach: selectedCoachId,
+        coachClass: selectedClass,
+        layoutTemplateId: matrixData.template.id,
+        seats: seatsFormatted,
+        berthDetails: JSON.stringify(berthDetails),
+        passengerDetails: JSON.stringify(updatedPassengers),
+      });
+
+      router.push(`/booking/review?${params.toString()}`);
+    } catch {
+      setErrorMessage(
+        "An unexpected error occurred while locking seats. Please try again."
+      );
+    } finally {
+      setIsLocking(false);
+    }
+  }
 
   return (
-    <main className="min-w-0 flex-1 bg-[#f7f8fc] text-slate-900">
-      <section className="bg-gradient-to-br from-blue-950 via-blue-800 to-indigo-700 px-5 py-10 text-white sm:px-8 sm:py-14">
-        <div className="mx-auto max-w-7xl">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="mb-7 inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold transition hover:bg-white/20"
-          >
-            <ArrowLeft size={17} />
-            Back
-          </button>
+    <main className="min-w-0 flex-1 bg-[#f7f8fc] pb-16 text-slate-900">
+      {/* Header Banner */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-blue-950 via-blue-800 to-indigo-700 px-5 py-10 text-white sm:px-8 sm:py-12">
+        <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-blue-400/20 blur-3xl" />
 
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-200">
-            Reservation details
+        <div className="relative mx-auto max-w-7xl">
+          <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-blue-200">
+            <Armchair size={16} />
+            Step 2 of 3 — Dynamic Seating Selection
           </p>
 
-          <h1 className="mt-3 text-3xl font-black sm:text-5xl">
-            Select your berth
+          <h1 className="mt-2 text-2xl font-black sm:text-4xl">
+            Choose Your Coach & Berths
           </h1>
 
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-blue-100 sm:text-base">
-            Choose Lower, Middle, Upper, Side Lower or Side Upper berth for
-            each passenger.
+          <p className="mt-2 max-w-xl text-xs sm:text-sm text-blue-100">
+            Select your travel class, pick an available coach, and click your
+            preferred berths on the realistic compartment layout.
           </p>
+
+          {/* Journey Context Card */}
+          <div className="mt-5 flex flex-wrap items-center gap-4 rounded-xl border border-white/15 bg-white/10 p-3.5 backdrop-blur-md text-xs sm:text-sm">
+            <div className="flex items-center gap-2">
+              <TrainFront size={16} className="text-blue-300" />
+              <span className="font-bold">{trainName}</span>
+              <span className="font-mono text-blue-200">({trainNumber})</span>
+            </div>
+            <div className="hidden h-4 w-px bg-white/20 sm:block" />
+            <div className="flex items-center gap-2">
+              <MapPin size={16} className="text-blue-300" />
+              <span>
+                {from} → {to}
+              </span>
+            </div>
+            <div className="hidden h-4 w-px bg-white/20 sm:block" />
+            <div className="flex items-center gap-2">
+              <CalendarDays size={16} className="text-blue-300" />
+              <span>{formattedDate}</span>
+            </div>
+            <div className="hidden h-4 w-px bg-white/20 sm:block" />
+            <div className="flex items-center gap-2">
+              <Users size={16} className="text-blue-300" />
+              <span>
+                {passengerCount} Passenger{passengerCount > 1 ? "s" : ""}
+              </span>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-7 px-5 py-8 sm:px-8 sm:py-10 lg:grid-cols-[1fr_340px]">
-        <div className="min-w-0">
-          <div className="mb-7 flex items-center gap-2 overflow-hidden text-xs font-bold sm:gap-3 sm:text-sm">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white">
-              <Check size={16} />
-            </span>
-            <span className="text-emerald-700">Passengers</span>
-
-            <span className="h-px min-w-3 flex-1 bg-blue-300" />
-
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-700 text-white">
-              2
-            </span>
-            <span className="text-blue-800">Berths</span>
-
-            <span className="h-px min-w-3 flex-1 bg-slate-200" />
-
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500">
-              3
-            </span>
-            <span className="text-slate-400">Review</span>
+      {/* Main Content Area */}
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {/* Error Alert */}
+        {errorMessage && (
+          <div className="mb-6 flex items-center gap-3 rounded-xl border border-rose-300 bg-rose-50 p-4 text-sm font-medium text-rose-800 shadow-sm">
+            <ShieldAlert size={18} className="flex-shrink-0 text-rose-600" />
+            <span>{errorMessage}</span>
           </div>
+        )}
 
-          <section className="mb-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-            <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
-                <TrainFront size={25} />
-              </div>
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+          {/* Left Column: Coach Class & Interactive Layout (8 cols) */}
+          <div className="space-y-6 lg:col-span-8">
+            {/* Travel Class Selector Tabs */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+                1. Select Travel Class
+              </h2>
 
-              <div className="min-w-0 flex-1">
-                <h2 className="text-lg font-extrabold sm:text-xl">
-                  {trainName || "Train details unavailable"}
+              {isLoadingCoaches ? (
+                <div className="flex items-center gap-2 py-4 text-xs font-semibold text-slate-400">
+                  <RefreshCw size={14} className="animate-spin text-blue-600" />
+                  Loading train coach classes...
+                </div>
+              ) : availableClasses.length === 0 ? (
+                <p className="text-xs text-slate-500">
+                  No classes configured for this train.
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {availableClasses.map((cls) => {
+                    const isCurrent = cls.coachClass === selectedClass;
+                    return (
+                      <button
+                        key={cls.coachClass}
+                        type="button"
+                        onClick={() => handleSelectClass(cls.coachClass)}
+                        className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all ${
+                          isCurrent
+                            ? "bg-blue-900 text-white shadow-md shadow-blue-900/20"
+                            : "border border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-400 hover:bg-blue-50/50"
+                        }`}
+                      >
+                        <Armchair size={15} />
+                        <span>{cls.className}</span>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] ${
+                            isCurrent
+                              ? "bg-blue-800 text-blue-200"
+                              : "bg-slate-200 text-slate-600"
+                          }`}
+                        >
+                          {cls.coaches.length} coach
+                          {cls.coaches.length > 1 ? "es" : ""}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Coach Selector Pills */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  2. Choose Coach in {COACH_CLASS_NAMES[selectedClass]}
                 </h2>
+                {matrixData && (
+                  <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    {matrixData.summary.availableCount} of{" "}
+                    {matrixData.summary.totalCapacity} berths free
+                  </span>
+                )}
+              </div>
 
-                <p className="mt-1 text-sm font-medium text-slate-500">
-                  Train No. {trainNumber || "—"}
+              {activeClassCoaches.length === 0 ? (
+                <p className="text-xs text-slate-400">
+                  No active coaches found in this class.
                 </p>
-
-                <div className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-base font-extrabold">
-                      {from || "Origin"}
-                    </p>
-                    <p className="mt-1 text-xs text-slate-500">Departure</p>
-                  </div>
-
-                  <div className="flex items-center text-blue-600">
-                    <span className="h-px w-5 bg-blue-300 sm:w-10" />
-                    <TrainFront size={18} />
-                    <span className="h-px w-5 bg-blue-300 sm:w-10" />
-                  </div>
-
-                  <div className="min-w-0 text-right">
-                    <p className="truncate text-base font-extrabold">
-                      {to || "Destination"}
-                    </p>
-                    <p className="mt-1 text-xs text-slate-500">Arrival</p>
-                  </div>
+              ) : (
+                <div className="flex flex-wrap gap-2.5">
+                  {activeClassCoaches.map((c) => {
+                    const isSelectedCoach = c.coachId === selectedCoachId;
+                    return (
+                      <button
+                        key={c.coachId}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCoachId(c.coachId);
+                          setSelectedBerths([]);
+                        }}
+                        className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
+                          isSelectedCoach
+                            ? "border-2 border-blue-600 bg-blue-50 text-blue-950 font-black shadow-sm"
+                            : "border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                        }`}
+                      >
+                        <span className="font-mono text-sm">{c.coachId}</span>
+                        <span className="text-[11px] font-normal text-slate-500">
+                          ({c.totalCapacity} berths)
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
-
-                <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-slate-100 pt-4 text-sm text-slate-600">
-                  <span className="inline-flex items-center gap-2">
-                    <CalendarDays size={16} className="text-blue-600" />
-                    {formattedDate}
-                  </span>
-
-                  <span className="inline-flex items-center gap-2">
-                    <Users size={16} className="text-blue-600" />
-                    {passengerCount} passenger
-                    {passengerCount > 1 ? "s" : ""}
-                  </span>
-
-                  <span className="inline-flex items-center gap-2">
-                    <Armchair size={16} className="text-blue-600" />
-                    Sleeper · Coach S1
-                  </span>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-7">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-xl font-extrabold">Sleeper berth layout</h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  Select {passengerCount} berth
-                  {passengerCount > 1 ? "s" : ""} for your journey.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 self-start rounded-xl bg-slate-100 px-3 py-2 text-sm font-bold text-slate-700">
-                <Armchair size={17} />
-                Coach S1
-              </div>
+              )}
             </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-3 rounded-2xl bg-slate-50 p-4 text-xs font-semibold text-slate-600 sm:grid-cols-3">
-              <span className="inline-flex items-center gap-2">
-                <span className="h-4 w-4 rounded-md border border-slate-300 bg-white" />
-                Available
-              </span>
-
-              <span className="inline-flex items-center gap-2">
-                <span className="h-4 w-4 rounded-md bg-blue-700" />
-                Selected
-              </span>
-
-              <span className="inline-flex items-center gap-2">
-                <span className="h-4 w-4 rounded-md bg-slate-300" />
-                Unavailable
-              </span>
-            </div>
-
-            <div className="mt-5 flex flex-wrap gap-2 rounded-2xl border border-blue-100 bg-blue-50 p-4">
-              {([
-                ["LB", "Lower Berth"],
-                ["MB", "Middle Berth"],
-                ["UB", "Upper Berth"],
-                ["SL", "Side Lower"],
-                ["SU", "Side Upper"],
-              ] as [BerthType, string][]).map(([type, label]) => (
-                <span
-                  key={type}
-                  className="rounded-lg border border-blue-100 bg-white px-3 py-2 text-xs font-semibold text-blue-900"
-                >
-                  <strong>{type}</strong> · {label}
-                </span>
-              ))}
-            </div>
-
-            <div className="mt-7 flex items-center justify-center gap-3 rounded-t-2xl border border-b-0 border-slate-200 bg-slate-50 py-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
-              <TrainFront size={17} />
-              Coach S1 · Berth map
-            </div>
-
-            <div className="space-y-5 rounded-b-2xl border border-slate-200 p-3 sm:p-5">
-              {bays.map((bay) => (
-                <div
-                  key={bay.number}
-                  className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3 sm:p-4"
-                >
-                  <div className="mb-3 flex items-center justify-between gap-2">
-                    <span className="text-xs font-extrabold uppercase tracking-wider text-slate-600">
-                      Bay {bay.number}
-                    </span>
-                    <span className="text-[10px] font-semibold text-slate-400">
-                      Main berths + side berths
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.85fr)] gap-2 sm:gap-3">
-                    {bay.mainBerths.slice(0, 3).map(renderBerth)}
-                    {bay.sideBerths.slice(0, 1).map(renderBerth)}
-
-                    {bay.mainBerths.slice(3, 6).map(renderBerth)}
-                    {bay.sideBerths.slice(1, 2).map(renderBerth)}
-                  </div>
-
-                  <div className="mt-2 grid grid-cols-4 gap-2 text-center text-[9px] font-semibold uppercase tracking-wide text-slate-400 sm:text-[10px]">
-                    <span>Main berth</span>
-                    <span>Main berth</span>
-                    <span>Main berth</span>
-                    <span>Side berth</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <p className="mt-6 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800">
-              <Info size={16} className="mt-0.5 shrink-0" />
-              This is a demo berth map with illustrative availability. It is
-              not connected to live railway inventory. Actual coach layouts
-              and berth allocation may differ.
-            </p>
-          </section>
-        </div>
-
-        <aside className="min-w-0">
-          <div className="sticky top-6 space-y-5">
-            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
-                  <Ticket size={22} />
-                </div>
-
+            {/* Seating Layout Canvas */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3 mb-4">
                 <div>
-                  <h2 className="font-extrabold">Booking summary</h2>
-                  <p className="text-xs text-slate-500">
-                    Your current selection
+                  <h2 className="text-base font-bold text-slate-900">
+                    Coach {selectedCoachId} Seating Layout
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Click an available berth to select it for your journey.
                   </p>
                 </div>
-              </div>
 
-              <div className="mt-6 space-y-4 text-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-slate-500">Passengers</span>
-                  <span className="font-bold">{passengerCount}</span>
-                </div>
-
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-slate-500">Coach</span>
-                  <span className="font-bold">S1</span>
-                </div>
-
-                <div>
-                  <span className="text-slate-500">Selected berths</span>
-
-                  {selectedBerths.length ? (
-                    <div className="mt-3 space-y-2">
-                      {selectedBerths.map((number) => (
-                        <div
-                          key={number}
-                          className="flex items-center justify-between gap-3 rounded-xl bg-blue-50 px-3 py-2.5"
-                        >
-                          <div>
-                            <p className="font-bold text-blue-950">
-                              Berth {number}
-                            </p>
-                            <p className="mt-0.5 text-xs text-blue-700">
-                              {getBerthLabel(number)}
-                            </p>
-                          </div>
-                          <span className="rounded-lg bg-white px-2.5 py-1 text-xs font-extrabold text-blue-800">
-                            {getBerthType(number)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="mt-2 text-right font-bold text-slate-400">
-                      None selected
-                    </p>
-                  )}
-                </div>
-
-                <div className="border-t border-slate-100 pt-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-slate-500">
-                      Fare per passenger
-                    </span>
-                    <span className="font-semibold">
-                      ₹{fare.toLocaleString("en-IN")}
+                {/* Status Color Legend */}
+                <div className="flex flex-wrap items-center gap-3 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-3.5 w-3.5 rounded border border-slate-300 bg-white" />
+                    <span className="text-slate-600">Available</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-3.5 w-3.5 rounded bg-blue-600" />
+                    <span className="text-blue-900 font-semibold">
+                      Selected
                     </span>
                   </div>
-
-                  <div className="mt-3 flex items-center justify-between gap-3">
-                    <span className="font-bold">Estimated total</span>
-                    <span className="text-xl font-black text-blue-800">
-                      ₹{totalFare.toLocaleString("en-IN")}
-                    </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-3.5 w-3.5 rounded bg-amber-100 border border-amber-300" />
+                    <span className="text-amber-800">Locked</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-3.5 w-3.5 rounded bg-slate-200 border border-slate-300" />
+                    <span className="text-slate-400">Booked</span>
                   </div>
                 </div>
               </div>
 
-              {error && (
-                <p
-                  role="alert"
-                  className="mt-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700"
-                >
-                  {error}
+              {isLoadingSeats ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center text-slate-400">
+                  <RefreshCw
+                    size={28}
+                    className="animate-spin text-blue-600 mb-2"
+                  />
+                  <p className="text-xs font-semibold">
+                    Fetching live coach layout and seat inventory...
+                  </p>
+                </div>
+              ) : matrixData ? (
+                <CoachLayoutViewer
+                  layoutTemplateId={matrixData.template.id}
+                  coachId={selectedCoachId}
+                  coachClass={selectedClass}
+                  berths={matrixData.berths}
+                  selectedBerthNumbers={selectedBerths}
+                  onToggleBerth={handleToggleBerth}
+                  interactive={true}
+                />
+              ) : (
+                <p className="py-12 text-center text-xs text-slate-400">
+                  Select a coach above to inspect seating layout.
                 </p>
               )}
+            </div>
+          </div>
 
-              <button
-                type="button"
-                onClick={handleContinue}
-                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-700/20 transition hover:bg-blue-800"
-              >
-                Continue to Review
-                <ArrowRight size={17} />
-              </button>
+          {/* Right Column: Passenger Assignments & Booking Summary (4 cols) */}
+          <div className="space-y-6 lg:col-span-4">
+            {/* Passenger Assignment Card */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider mb-4 flex items-center justify-between">
+                <span>Passengers & Preferences</span>
+                <span className="text-xs font-normal text-slate-500">
+                  {selectedBerths.length} of {passengerCount} assigned
+                </span>
+              </h3>
 
-              <p className="mt-4 flex items-center justify-center gap-2 text-center text-xs leading-5 text-slate-500">
-                <ShieldCheck
-                  size={15}
-                  className="shrink-0 text-emerald-600"
-                />
-                Review your details before confirming.
-              </p>
-            </section>
+              <div className="space-y-4">
+                {initialPassengers.map((passenger, idx) => {
+                  const assignedSeatNum = selectedBerths[idx];
+                  const assignedBerthDef = matrixData?.berths.find(
+                    (b) => b.number === assignedSeatNum
+                  );
 
-            <section className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
-              <div className="flex items-start gap-3">
-                <MapPin
-                  size={19}
-                  className="mt-0.5 shrink-0 text-blue-700"
-                />
-                <div>
-                  <h3 className="text-sm font-bold text-blue-950">
-                    Journey information
-                  </h3>
-                  <p className="mt-1 text-xs leading-5 text-blue-800">
-                    {from || "Origin"} to {to || "Destination"} on{" "}
-                    {formattedDate}.
-                  </p>
+                  return (
+                    <div
+                      key={idx}
+                      className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 space-y-2.5"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-bold text-slate-900">
+                            {idx + 1}. {passenger.name}
+                          </p>
+                          <p className="text-[11px] text-slate-500">
+                            Age: {passenger.age} • {passenger.gender}
+                          </p>
+                        </div>
+
+                        {assignedSeatNum ? (
+                          <span className="rounded-lg bg-blue-900 px-2.5 py-1 text-xs font-black text-white shadow-sm">
+                            Berth {assignedSeatNum}{" "}
+                            <span className="text-[10px] text-blue-200 font-semibold">
+                              ({assignedBerthDef?.type || "LB"})
+                            </span>
+                          </span>
+                        ) : (
+                          <span className="rounded-lg bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+                            Click layout to assign
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Berth Preference Dropdown */}
+                      <div>
+                        <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                          Berth Preference
+                        </label>
+                        <select
+                          value={preferences[idx] || "No preference"}
+                          onChange={(e) =>
+                            setPreferences({
+                              ...preferences,
+                              [idx]: e.target.value,
+                            })
+                          }
+                          className="w-full rounded-lg border border-slate-200 bg-white py-1.5 px-2.5 text-xs text-slate-700 focus:border-blue-500 focus:outline-none"
+                        >
+                          {preferenceOptions.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Price Summary & Submit Card */}
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-4">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Fare Breakdown
+              </h3>
+
+              <div className="space-y-2 text-xs text-slate-600 border-b border-slate-100 pb-3">
+                <div className="flex justify-between">
+                  <span>Class Selected</span>
+                  <span className="font-semibold text-slate-900">
+                    {COACH_CLASS_NAMES[selectedClass]}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Base Fare per Passenger</span>
+                  <span className="font-semibold text-slate-900">
+                    ₹{fare.toLocaleString("en-IN")}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Total Passengers</span>
+                  <span className="font-semibold text-slate-900">
+                    × {passengerCount}
+                  </span>
                 </div>
               </div>
-            </section>
+
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold text-slate-900">
+                  Total Payable
+                </span>
+                <span className="text-xl font-black text-blue-900">
+                  ₹{totalFare.toLocaleString("en-IN")}
+                </span>
+              </div>
+
+              {/* 10-Minute Lock Notice */}
+              <div className="flex items-start gap-2 rounded-xl bg-blue-50/70 p-3 text-[11px] text-blue-900 border border-blue-200/60">
+                <Clock size={15} className="flex-shrink-0 text-blue-600 mt-0.5" />
+                <span>
+                  Seats are temporarily locked for 10 minutes upon proceeding to
+                  prevent double-booking while you review.
+                </span>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-2 space-y-2">
+                <button
+                  type="button"
+                  onClick={handleContinue}
+                  disabled={
+                    selectedBerths.length !== passengerCount || isLocking
+                  }
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 py-3.5 px-4 text-xs font-bold text-white shadow-lg shadow-blue-600/30 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  {isLocking ? (
+                    <>
+                      <RefreshCw size={14} className="animate-spin" />
+                      Locking Seats...
+                    </>
+                  ) : (
+                    <>
+                      Proceed to Review
+                      <ArrowRight size={14} />
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => router.back()}
+                  className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
+                >
+                  <ArrowLeft size={13} />
+                  Change Passenger Information
+                </button>
+              </div>
+            </div>
           </div>
-        </aside>
-      </section>
+        </div>
+      </div>
     </main>
   );
 }
 
-export default function SeatSelectionPage() {
+export default function BookingSeatsPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-[50vh] items-center justify-center bg-[#f7f8fc] px-5 text-slate-600">
-          <p className="text-sm font-semibold">Loading seat selection...</p>
-        </main>
+        <div className="flex min-h-screen items-center justify-center bg-slate-50">
+          <div className="text-center">
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+            <p className="mt-3 text-xs font-semibold text-slate-500">
+              Loading seat selection...
+            </p>
+          </div>
+        </div>
       }
     >
       <SeatSelectionContent />

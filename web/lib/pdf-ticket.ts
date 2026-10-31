@@ -9,6 +9,7 @@ export type TicketData = {
   journeyDate: string;
   passengerCount: number;
   coach: string;
+  coachClass?: string;
   seats: string[];
   totalFare: number;
   status: "confirmed" | "cancelled";
@@ -165,7 +166,8 @@ export async function generateTicketPdf(data: TicketData): Promise<Uint8Array> {
   page.drawText(`${data.trainName} (${data.trainNumber})`, { x: 50, y: y - 56, size: 10, font: fontBold, color: slateDark });
 
   page.drawText("Class & Coach", { x: 50, y: y - 76, size: 8, font: fontRegular, color: slateMuted });
-  page.drawText(`Sleeper (SL)  |  Coach: ${data.coach}`, { x: 50, y: y - 90, size: 9.5, font: fontBold, color: slateDark });
+  const coachClassText = data.coachClass ? `${data.coachClass}  |  Coach: ${data.coach}` : `Sleeper (SL)  |  Coach: ${data.coach}`;
+  page.drawText(coachClassText, { x: 50, y: y - 90, size: 9.5, font: fontBold, color: slateDark });
 
   // Center Column: Route
   page.drawText("Route (From -> To)", { x: 235, y: y - 42, size: 8, font: fontRegular, color: slateMuted });
