@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import { connectDB } from "@/lib/mongodb";
 import { getAuthSession } from "@/lib/auth";
 import Booking from "@/models/Booking";
+import { createNotification } from "@/lib/notifications";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -257,6 +258,22 @@ export async function POST(request: NextRequest) {
       seats: seats.map((seat: string) => seat.trim()),
       totalFare,
       status: "confirmed",
+    });
+
+    // Safely dispatch persistent booking confirmation notification
+    await createNotification({
+      userId: session.userId,
+      title: `Booking Confirmed: ${booking.bookingReference}`,
+      message: `Your reservation on ${booking.trainName} (${booking.trainNumber}) from ${booking.from} to ${booking.to} on ${booking.journeyDate} is confirmed. Coach: ${booking.coach}, Seats: ${booking.seats.join(", ")}.`,
+      type: "booking_confirmed",
+      actionUrl: `/bookings`,
+      dedupKey: `booking_confirmed_${booking.bookingReference}`,
+      metadata: {
+        bookingReference: booking.bookingReference,
+        trainNumber: booking.trainNumber,
+        trainName: booking.trainName,
+        journeyDate: booking.journeyDate,
+      },
     });
 
     return NextResponse.json(

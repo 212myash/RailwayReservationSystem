@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import { connectDB } from "@/lib/mongodb";
 import { getAuthSession } from "@/lib/auth";
 import Booking from "@/models/Booking";
+import { createNotification } from "@/lib/notifications";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -70,6 +71,20 @@ export async function PATCH(
         { status: 409 }
       );
     }
+
+    // Safely dispatch persistent cancellation notification
+    await createNotification({
+      userId: session.userId,
+      title: `Booking Cancelled: ${booking.bookingReference}`,
+      message: `Your reservation ${booking.bookingReference} for ${booking.trainName || "train"} (${booking.trainNumber || ""}) has been cancelled.`,
+      type: "booking_cancelled",
+      actionUrl: `/bookings`,
+      dedupKey: `booking_cancelled_${booking.bookingReference}`,
+      metadata: {
+        bookingReference: booking.bookingReference,
+        status: "cancelled",
+      },
+    });
 
     return NextResponse.json({
       success: true,

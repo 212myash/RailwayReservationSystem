@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import { getAuthSession } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -81,6 +82,18 @@ export async function PATCH(request: NextRequest) {
     const hashedPassword = await bcrypt.hash(newPassword, 12);
     user.password = hashedPassword;
     await user.save();
+
+    // Safely dispatch persistent security notification
+    await createNotification({
+      userId: session.userId,
+      title: "Security Alert: Password Changed",
+      message: "The password for your RailConnect account was successfully updated. If you did not make this change, please contact support immediately.",
+      type: "password_changed",
+      actionUrl: "/settings",
+      metadata: {
+        updatedAt: new Date().toISOString(),
+      },
+    });
 
     return NextResponse.json({
       success: true,

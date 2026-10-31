@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   ArrowUpRight,
+  Bell,
   Home,
   MapPin,
   TrainFront,
@@ -14,6 +15,7 @@ const exploreLinks = [
   { label: "Stations", href: "/stations", Icon: MapPin },
   { label: "PNR Status", href: "/pnr-status", Icon: Search },
   { label: "My Bookings", href: "/bookings", Icon: Ticket },
+  { label: "Notifications", href: "/notifications", Icon: Bell },
 ];
 
 const projectFeatures = [

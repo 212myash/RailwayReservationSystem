@@ -3,15 +3,16 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
-  ArrowRight,
-  TrainFront,
-  Ticket,
-  MapPin,
-  Clock,
-  UserRound,
-  RefreshCw,
   AlertCircle,
+  ArrowRight,
+  Bell,
+  Clock,
+  MapPin,
+  RefreshCw,
   Search,
+  Ticket,
+  TrainFront,
+  UserRound,
 } from "lucide-react";
 
 type Booking = {
@@ -57,6 +58,12 @@ const quickLinks = [
     description: "Explore available railway stations.",
     href: "/stations",
     icon: MapPin,
+  },
+  {
+    title: "Notifications",
+    description: "View booking alerts and security updates.",
+    href: "/notifications",
+    icon: Bell,
   },
 ];
 function getTodayInIndia() {

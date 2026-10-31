@@ -1,25 +1,31 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   ArrowDownRight,
   ArrowRight,
+  Bell,
+  CheckCheck,
   ChevronDown,
   CircleUserRound,
+  Clock,
   Home,
   LogIn,
   LogOut,
   MapPin,
-  Search,
+  Megaphone,
   Menu,
+  Search,
   Settings,
+  ShieldCheck,
   Ticket,
   TrainFront,
   UserRound,
   X,
+  XCircle,
 } from "lucide-react";
 
 type SessionUser = {
@@ -28,6 +34,42 @@ type SessionUser = {
   email: string;
   role: "user" | "admin";
 };
+
+type NotificationItem = {
+  id: string;
+  title: string;
+  message: string;
+  type:
+    | "booking_confirmed"
+    | "booking_cancelled"
+    | "journey_reminder"
+    | "password_changed"
+    | "system_announcement";
+  isRead: boolean;
+  actionUrl: string | null;
+  createdAt: string;
+};
+
+function formatRelativeTime(dateInput: string | Date): string {
+  try {
+    const date = new Date(dateInput);
+    const now = new Date();
+    const diffSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (Number.isNaN(diffSeconds) || diffSeconds < 0) return "Just now";
+    if (diffSeconds < 60) return "Just now";
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    if (diffMinutes < 60) return `${diffMinutes}m ago`;
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString("en-IN", { month: "short", day: "numeric" });
+  } catch {
+    return "";
+  }
+}
 
 const navigation = [
   {
@@ -65,12 +107,37 @@ export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const notifRef = useRef<HTMLDivElement>(null);
 
   const [user, setUser] = useState<SessionUser | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+
+  // Notification state
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [loadingNotifs, setLoadingNotifs] = useState(false);
+
+  const loadNotifications = useCallback(async () => {
+    try {
+      setLoadingNotifs(true);
+      const res = await fetch("/api/notifications?limit=5", {
+        cache: "no-store",
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setNotifications(data.notifications || []);
+        setUnreadCount(data.pagination?.unreadCount || 0);
+      }
+    } catch {
+      // safe fallback
+    } finally {
+      setLoadingNotifs(false);
+    }
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -91,11 +158,31 @@ export default function Navbar() {
 
         if (response.ok && data.success && data.user) {
           setUser(data.user as SessionUser);
+
+          // Concurrently fetch notification summary
+          try {
+            const notifRes = await fetch("/api/notifications?limit=5", {
+              cache: "no-store",
+            });
+            const notifData = await notifRes.json();
+            if (active && notifRes.ok && notifData.success) {
+              setNotifications(notifData.notifications || []);
+              setUnreadCount(notifData.pagination?.unreadCount || 0);
+            }
+          } catch {
+            // ignore notification network error
+          }
         } else {
           setUser(null);
+          setNotifications([]);
+          setUnreadCount(0);
         }
       } catch {
-        if (active) setUser(null);
+        if (active) {
+          setUser(null);
+          setNotifications([]);
+          setUnreadCount(0);
+        }
       } finally {
         if (active) setLoadingUser(false);
       }
@@ -123,11 +210,18 @@ export default function Navbar() {
       ) {
         setProfileOpen(false);
       }
+      if (
+        notifRef.current &&
+        !notifRef.current.contains(event.target as Node)
+      ) {
+        setNotifOpen(false);
+      }
     }
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setProfileOpen(false);
+        setNotifOpen(false);
         setMobileOpen(false);
       }
     }
@@ -140,6 +234,46 @@ export default function Navbar() {
       document.removeEventListener("keydown", handleEscape);
     };
   }, []);
+
+  async function handleMarkAllRead() {
+    try {
+      const res = await fetch("/api/notifications/read-all", {
+        method: "PATCH",
+      });
+      if (res.ok) {
+        setUnreadCount(0);
+        setNotifications((prev) =>
+          prev.map((item) => ({ ...item, isRead: true }))
+        );
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  async function handleNotificationClick(item: NotificationItem) {
+    if (!item.isRead) {
+      try {
+        void fetch(`/api/notifications/${item.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isRead: true }),
+        });
+        setUnreadCount((c) => Math.max(0, c - 1));
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === item.id ? { ...n, isRead: true } : n))
+        );
+      } catch {
+        // ignore
+      }
+    }
+    setNotifOpen(false);
+    if (item.actionUrl) {
+      router.push(item.actionUrl);
+    } else {
+      router.push("/notifications");
+    }
+  }
 
   async function handleLogout() {
     setLoggingOut(true);
@@ -157,7 +291,10 @@ export default function Navbar() {
       }
 
       setUser(null);
+      setNotifications([]);
+      setUnreadCount(0);
       setProfileOpen(false);
+      setNotifOpen(false);
       setMobileOpen(false);
       router.replace("/");
       router.refresh();
@@ -283,7 +420,163 @@ export default function Navbar() {
                 className="h-11 w-28 animate-pulse rounded-xl bg-slate-100"
               />
             ) : user ? (
-              <div ref={dropdownRef} className="relative">
+              <>
+                {/* NOTIFICATION BELL */}
+                <div ref={notifRef} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !notifOpen;
+                      setNotifOpen(next);
+                      setProfileOpen(false);
+                      if (next) void loadNotifications();
+                    }}
+                    aria-label={
+                      unreadCount > 0
+                        ? `${unreadCount} unread notifications`
+                        : "Notifications"
+                    }
+                    aria-expanded={notifOpen}
+                    aria-haspopup="menu"
+                    className={`relative flex h-11 w-11 items-center justify-center rounded-2xl border transition duration-200 ${
+                      notifOpen
+                        ? "border-blue-200 bg-blue-50/80 text-blue-700 shadow-sm"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50/40 hover:text-blue-700"
+                    }`}
+                  >
+                    <Bell size={19} />
+                    {unreadCount > 0 && (
+                      <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-black leading-none text-white shadow-sm ring-2 ring-white">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {notifOpen && (
+                    <div
+                      role="menu"
+                      className="nav-drop absolute right-0 top-[calc(100%+12px)] w-80 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_70px_-25px_rgba(15,23,42,0.35)] sm:w-96"
+                    >
+                      {/* HEADER */}
+                      <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/80 px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-slate-900">
+                            Notifications
+                          </span>
+                          {unreadCount > 0 && (
+                            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-bold text-blue-700">
+                              {unreadCount} new
+                            </span>
+                          )}
+                        </div>
+
+                        {unreadCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={handleMarkAllRead}
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 hover:text-blue-900 hover:underline"
+                          >
+                            <CheckCheck size={14} />
+                            Mark all read
+                          </button>
+                        )}
+                      </div>
+
+                      {/* NOTIFICATION PREVIEW LIST */}
+                      <div className="max-h-96 divide-y divide-slate-100 overflow-y-auto">
+                        {loadingNotifs && notifications.length === 0 ? (
+                          <div className="space-y-3 p-4">
+                            <div className="h-10 animate-pulse rounded-xl bg-slate-100" />
+                            <div className="h-10 animate-pulse rounded-xl bg-slate-100" />
+                          </div>
+                        ) : notifications.length === 0 ? (
+                          <div className="p-8 text-center">
+                            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                              <Bell size={22} />
+                            </div>
+                            <p className="mt-2 text-sm font-bold text-slate-800">
+                              No notifications yet
+                            </p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              You&apos;re completely up to date!
+                            </p>
+                          </div>
+                        ) : (
+                          notifications.map((item) => (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onClick={() => handleNotificationClick(item)}
+                              className={`flex w-full items-start gap-3 p-3.5 text-left transition hover:bg-slate-50 ${
+                                !item.isRead ? "bg-blue-50/40" : "bg-white"
+                              }`}
+                            >
+                              <span
+                                className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ring-1 ${
+                                  item.type === "booking_confirmed"
+                                    ? "bg-emerald-50 text-emerald-600 ring-emerald-200"
+                                    : item.type === "booking_cancelled"
+                                    ? "bg-red-50 text-red-600 ring-red-200"
+                                    : item.type === "journey_reminder"
+                                    ? "bg-amber-50 text-amber-600 ring-amber-200"
+                                    : item.type === "password_changed"
+                                    ? "bg-purple-50 text-purple-600 ring-purple-200"
+                                    : "bg-blue-50 text-blue-600 ring-blue-200"
+                                }`}
+                              >
+                                {item.type === "booking_confirmed" && <Ticket size={16} />}
+                                {item.type === "booking_cancelled" && <XCircle size={16} />}
+                                {item.type === "journey_reminder" && <Clock size={16} />}
+                                {item.type === "password_changed" && <ShieldCheck size={16} />}
+                                {item.type === "system_announcement" && <Megaphone size={16} />}
+                              </span>
+
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center justify-between gap-1">
+                                  <p
+                                    className={`truncate text-xs ${
+                                      !item.isRead
+                                        ? "font-bold text-slate-900"
+                                        : "font-semibold text-slate-700"
+                                    }`}
+                                  >
+                                    {item.title}
+                                  </p>
+                                  <span className="shrink-0 text-[10px] text-slate-400">
+                                    {formatRelativeTime(item.createdAt)}
+                                  </span>
+                                </div>
+                                <p className="mt-0.5 line-clamp-2 text-xs text-slate-500">
+                                  {item.message}
+                                </p>
+                              </div>
+
+                              {!item.isRead && (
+                                <span
+                                  className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blue-600 ring-2 ring-blue-100"
+                                  title="Unread"
+                                />
+                              )}
+                            </button>
+                          ))
+                        )}
+                      </div>
+
+                      {/* FOOTER */}
+                      <div className="border-t border-slate-100 bg-slate-50/50 p-2 text-center">
+                        <Link
+                          href="/notifications"
+                          onClick={() => setNotifOpen(false)}
+                          className="block rounded-xl py-2 text-xs font-bold text-blue-700 transition hover:bg-blue-50"
+                        >
+                          View all notifications →
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div ref={dropdownRef} className="relative">
                 <button
                   type="button"
                   onClick={() => setProfileOpen((open) => !open)}
@@ -363,6 +656,23 @@ export default function Navbar() {
                     </Link>
 
                     <Link
+                      href="/notifications"
+                      role="menuitem"
+                      onClick={() => setProfileOpen(false)}
+                      className="flex items-center justify-between rounded-xl px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-blue-50 hover:text-blue-700"
+                    >
+                      <span className="flex items-center gap-3">
+                        <Bell size={18} />
+                        Notifications
+                      </span>
+                      {unreadCount > 0 && (
+                        <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-bold text-blue-700">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </Link>
+
+                    <Link
                       href="/settings"
                       role="menuitem"
                       onClick={() => setProfileOpen(false)}
@@ -387,6 +697,7 @@ export default function Navbar() {
                   </div>
                 )}
               </div>
+            </>
             ) : (
               <>
                 <Link
@@ -412,13 +723,32 @@ export default function Navbar() {
           {/* MOBILE MENU BUTTON */}
           <div className="flex items-center gap-2 sm:hidden">
             {user && (
-              <Link
-                href={accountHref}
-                aria-label="Open dashboard"
-                className="flex h-10 w-10 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-blue-700"
-              >
-                <CircleUserRound size={21} />
-              </Link>
+              <>
+                <Link
+                  href="/notifications"
+                  aria-label={
+                    unreadCount > 0
+                      ? `${unreadCount} unread notifications`
+                      : "Notifications"
+                  }
+                  className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition hover:bg-blue-50"
+                >
+                  <Bell size={19} />
+                  {unreadCount > 0 && (
+                    <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[9px] font-black text-white">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </Link>
+
+                <Link
+                  href={accountHref}
+                  aria-label="Open dashboard"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-blue-700"
+                >
+                  <CircleUserRound size={21} />
+                </Link>
+              </>
             )}
 
             <button
@@ -494,6 +824,22 @@ export default function Navbar() {
                   >
                     <CircleUserRound size={18} />
                     My profile
+                  </Link>
+
+                  <Link
+                    href="/notifications"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-blue-50"
+                  >
+                    <span className="flex items-center gap-3">
+                      <Bell size={18} />
+                      Notifications
+                    </span>
+                    {unreadCount > 0 && (
+                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-[11px] font-bold text-white">
+                        {unreadCount}
+                      </span>
+                    )}
                   </Link>
 
                   <Link
