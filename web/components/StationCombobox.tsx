@@ -153,14 +153,14 @@ export default function StationCombobox({
       {label && (
         <label
           htmlFor={id}
-          className="mb-1.5 text-xs font-bold uppercase tracking-wider text-slate-700"
+          className="mb-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"
         >
           {label}
         </label>
       )}
 
       <div className="relative">
-        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400 dark:text-slate-500">
           <MapPin size={18} />
         </div>
 
@@ -183,39 +183,39 @@ export default function StationCombobox({
           aria-expanded={isOpen}
           aria-controls={`${id || "station"}-listbox`}
           aria-autocomplete="list"
-          className={`w-full rounded-xl border bg-white py-3 pl-10 pr-10 text-sm font-semibold text-slate-900 transition placeholder:font-normal placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 ${
+          className={`w-full rounded-xl border bg-white py-3 pl-10 pr-10 text-sm font-semibold text-slate-900 transition placeholder:font-normal placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:focus:ring-blue-500/20 ${
             error
-              ? "border-red-400 focus:border-red-500 focus:ring-red-200"
-              : "border-slate-200 focus:border-blue-600"
+              ? "border-red-400 focus:border-red-500 focus:ring-red-200 dark:border-red-500"
+              : "border-slate-200 focus:border-blue-600 dark:focus:border-blue-500"
           }`}
         />
 
         <div className="absolute inset-y-0 right-0 flex items-center pr-3">
           {isLoading ? (
-            <Loader2 size={16} className="animate-spin text-blue-600" />
+            <Loader2 size={16} className="animate-spin text-blue-600 dark:text-blue-400" />
           ) : inputValue ? (
             <button
               type="button"
               onClick={handleClear}
-              className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+              className="rounded-full p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
               aria-label="Clear station"
             >
               <X size={15} />
             </button>
           ) : (
-            <Search size={16} className="text-slate-400" />
+            <Search size={16} className="text-slate-400 dark:text-slate-500" />
           )}
         </div>
       </div>
 
-      {error && <p className="mt-1 text-xs font-medium text-red-600">{error}</p>}
+      {error && <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">{error}</p>}
 
       {/* DROPDOWN MENU */}
       {isOpen && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1.5 shadow-xl">
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-72 overflow-y-auto rounded-xl border border-slate-200 bg-white py-1.5 shadow-xl dark:border-slate-800 dark:bg-slate-900 dark:shadow-2xl">
           {isLoading && filteredResults.length === 0 ? (
-            <div className="flex items-center justify-center gap-2 py-6 text-sm text-slate-500">
-              <Loader2 size={16} className="animate-spin text-blue-600" />
+            <div className="flex items-center justify-center gap-2 py-6 text-sm text-slate-500 dark:text-slate-400">
+              <Loader2 size={16} className="animate-spin text-blue-600 dark:text-blue-400" />
               Searching 9,000+ stations...
             </div>
           ) : filteredResults.length > 0 ? (
@@ -223,7 +223,7 @@ export default function StationCombobox({
               ref={listRef}
               id={`${id || "station"}-listbox`}
               role="listbox"
-              className="divide-y divide-slate-100"
+              className="divide-y divide-slate-100 dark:divide-slate-800"
             >
               {filteredResults.map((station, index) => {
                 const isSelected = index === selectedIndex;
@@ -240,22 +240,22 @@ export default function StationCombobox({
                     onMouseEnter={() => setSelectedIndex(index)}
                     className={`flex cursor-pointer items-center justify-between px-4 py-2.5 transition ${
                       isExcluded
-                        ? "cursor-not-allowed bg-slate-50 opacity-40"
+                        ? "cursor-not-allowed bg-slate-50 opacity-40 dark:bg-slate-950/40"
                         : isSelected
-                        ? "bg-blue-50 text-blue-950"
-                        : "hover:bg-slate-50"
+                        ? "bg-blue-50 text-blue-950 dark:bg-blue-950/60 dark:text-blue-200"
+                        : "hover:bg-slate-50 dark:hover:bg-slate-800/60"
                     }`}
                   >
                     <div className="min-w-0 pr-3">
                       <div className="flex items-center gap-2">
-                        <span className="truncate text-sm font-bold text-slate-900">
+                        <span className="truncate text-sm font-bold text-slate-900 dark:text-white">
                           {station.name}
                         </span>
-                        <span className="inline-flex shrink-0 items-center rounded-md bg-blue-100 px-1.5 py-0.5 text-xs font-mono font-bold text-blue-800">
+                        <span className="inline-flex shrink-0 items-center rounded-md bg-blue-100 px-1.5 py-0.5 text-xs font-mono font-bold text-blue-800 dark:bg-blue-950 dark:text-blue-300">
                           {station.code}
                         </span>
                       </div>
-                      <div className="mt-0.5 truncate text-xs text-slate-500">
+                      <div className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
                         {station.city}
                         {station.state ? `, ${station.state}` : ""}
                         {station.platforms ? ` • Platform ${station.platforms}` : ""}
@@ -266,7 +266,7 @@ export default function StationCombobox({
               })}
             </ul>
           ) : (
-            <div className="py-6 text-center text-sm text-slate-500">
+            <div className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">
               No stations found matching &quot;{inputValue}&quot;
             </div>
           )}

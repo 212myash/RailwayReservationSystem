@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -49,7 +48,7 @@ export default function ProfilePage() {
         }
       } catch {
         if (active) {
-          setError("Profile load nahi ho paya. Dobara try karo.");
+          setError("Unable to load profile. Please try again.");
         }
       } finally {
         if (active) {
@@ -67,9 +66,9 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-[60vh] items-center justify-center">
-        <div className="flex items-center gap-3 text-slate-600">
-          <LoaderCircle className="h-5 w-5 animate-spin" />
+      <main className="flex min-h-[60vh] items-center justify-center bg-slate-50 transition-colors dark:bg-slate-950">
+        <div className="flex items-center gap-3 text-slate-600 dark:text-slate-400">
+          <LoaderCircle className="h-5 w-5 animate-spin text-blue-600" />
           Loading profile...
         </div>
       </main>
@@ -79,11 +78,11 @@ export default function ProfilePage() {
   if (error) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-12">
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300">
           <p>{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-white"
+            className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700"
           >
             Try again
           </button>
@@ -95,18 +94,18 @@ export default function ProfilePage() {
   if (!user) return null;
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-slate-50 px-4 py-8 transition-colors sm:px-6 lg:px-8 dark:bg-slate-950">
       <div className="mx-auto max-w-4xl">
         <button
           onClick={() => router.back()}
-          className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-blue-700"
+          className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-blue-700 dark:text-slate-400 dark:hover:text-blue-400"
         >
           <ArrowLeft className="h-4 w-4" />
           Go back
         </button>
 
-        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="bg-gradient-to-r from-blue-900 to-blue-700 px-6 py-8 text-white sm:px-8">
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="bg-gradient-to-r from-blue-900 to-indigo-800 px-6 py-8 text-white sm:px-8 dark:from-slate-950 dark:to-blue-950">
             <div className="flex items-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/15">
                 <UserRound className="h-8 w-8" />
@@ -122,67 +121,67 @@ export default function ProfilePage() {
           </div>
 
           <div className="p-6 sm:p-8">
-            <h2 className="mb-5 text-lg font-semibold text-slate-900">
+            <h2 className="mb-5 text-lg font-semibold text-slate-900 dark:text-white">
               Personal Information
             </h2>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-xl border border-slate-200 p-5">
-                <div className="mb-3 flex items-center gap-2 text-sm text-slate-500">
+              <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-800 dark:bg-slate-950/50">
+                <div className="mb-3 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                   <UserRound className="h-4 w-4" />
                   Full Name
                 </div>
-                <p className="break-words font-semibold text-slate-900">
+                <p className="break-words font-semibold text-slate-900 dark:text-white">
                   {user.name}
                 </p>
               </div>
 
-              <div className="rounded-xl border border-slate-200 p-5">
-                <div className="mb-3 flex items-center gap-2 text-sm text-slate-500">
+              <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-800 dark:bg-slate-950/50">
+                <div className="mb-3 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                   <Mail className="h-4 w-4" />
                   Email Address
                 </div>
-                <p className="break-words font-semibold text-slate-900">
+                <p className="break-words font-semibold text-slate-900 dark:text-white">
                   {user.email}
                 </p>
               </div>
 
-              <div className="rounded-xl border border-slate-200 p-5">
-                <div className="mb-3 flex items-center gap-2 text-sm text-slate-500">
+              <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-800 dark:bg-slate-950/50">
+                <div className="mb-3 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                   <ShieldCheck className="h-4 w-4" />
                   Account Type
                 </div>
-                <p className="font-semibold capitalize text-slate-900">
+                <p className="font-semibold capitalize text-slate-900 dark:text-white">
                   {user.role}
                 </p>
               </div>
 
-              <div className="rounded-xl border border-slate-200 p-5">
-                <div className="mb-3 flex items-center gap-2 text-sm text-slate-500">
+              <div className="rounded-xl border border-slate-200 p-5 dark:border-slate-800 dark:bg-slate-950/50">
+                <div className="mb-3 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                   <CalendarDays className="h-4 w-4" />
                   Account ID
                 </div>
-                <p className="break-all font-mono text-sm text-slate-700">
+                <p className="break-all font-mono text-sm text-slate-700 dark:text-slate-300">
                   {user.id}
                 </p>
               </div>
             </div>
 
-            <div className="mt-6 rounded-xl bg-blue-50 p-4 text-sm text-blue-900">
+            <div className="mt-6 rounded-xl bg-blue-50 p-4 text-sm text-blue-900 dark:bg-blue-950/40 dark:text-blue-200">
               To update your name or change your password, visit Account Settings below.
             </div>
 
             <div className="mt-6 flex flex-wrap gap-3">
               <button
                 onClick={() => router.push("/settings")}
-                className="rounded-xl bg-blue-700 px-5 py-3 font-medium text-white transition hover:bg-blue-800"
+                className="rounded-xl bg-blue-700 px-5 py-3 font-medium text-white transition hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-500"
               >
                 Account Settings
               </button>
 
               <button
                 onClick={() => router.push("/bookings")}
-                className="rounded-xl border border-slate-300 px-5 py-3 font-medium text-slate-700 transition hover:bg-slate-50"
+                className="rounded-xl border border-slate-300 px-5 py-3 font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
               >
                 My Bookings
               </button>

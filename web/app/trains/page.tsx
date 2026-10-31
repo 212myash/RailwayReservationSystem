@@ -389,8 +389,8 @@ function TrainsContent() {
                 >
                   Travel Date
                 </label>
-                <div className="flex h-[46px] items-center rounded-xl border border-slate-200 bg-white px-3 text-slate-900 shadow-sm focus-within:ring-2 focus-within:ring-blue-500">
-                  <CalendarDays size={16} className="mr-2 shrink-0 text-slate-400" />
+                <div className="flex h-[46px] items-center rounded-xl border border-slate-200 bg-white px-3 text-slate-900 shadow-sm focus-within:ring-2 focus-within:ring-blue-500 dark:border-slate-800 dark:bg-slate-900 dark:text-white">
+                  <CalendarDays size={16} className="mr-2 shrink-0 text-slate-400 dark:text-slate-500" />
                   <input
                     id="search-date"
                     type="date"
@@ -400,7 +400,7 @@ function TrainsContent() {
                       setJourneyDate(e.target.value);
                       setFormValidationError(null);
                     }}
-                    className="w-full bg-transparent text-xs font-bold text-slate-900 outline-none"
+                    className="w-full bg-transparent text-xs font-bold text-slate-900 outline-none dark:text-white"
                   />
                 </div>
               </div>
@@ -413,21 +413,21 @@ function TrainsContent() {
                 >
                   Passengers
                 </label>
-                <div className="relative flex h-[46px] items-center rounded-xl border border-slate-200 bg-white px-3 text-slate-900 shadow-sm">
-                  <Users size={16} className="mr-2 shrink-0 text-blue-600" />
+                <div className="relative flex h-[46px] items-center rounded-xl border border-slate-200 bg-white px-3 text-slate-900 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-white">
+                  <Users size={16} className="mr-2 shrink-0 text-blue-600 dark:text-blue-400" />
                   <select
                     id="search-passengers"
                     value={passengers}
                     onChange={(e) => setPassengers(e.target.value)}
-                    className="w-full appearance-none bg-transparent text-xs font-bold text-slate-900 outline-none"
+                    className="w-full appearance-none bg-transparent text-xs font-bold text-slate-900 outline-none dark:text-white"
                   >
                     {[1, 2, 3, 4, 5, 6].map((count) => (
-                      <option key={count} value={count}>
+                      <option key={count} value={count} className="dark:bg-slate-900 dark:text-white">
                         {count} Passenger{count > 1 ? "s" : ""}
                       </option>
                     ))}
                   </select>
-                  <ChevronDown size={14} className="pointer-events-none absolute right-3 text-slate-400" />
+                  <ChevronDown size={14} className="pointer-events-none absolute right-3 text-slate-400 dark:text-slate-500" />
                 </div>
               </div>
 

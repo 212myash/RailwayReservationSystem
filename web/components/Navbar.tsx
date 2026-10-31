@@ -20,6 +20,7 @@ import {
   Menu,
   Search,
   Settings,
+  Shield,
   ShieldCheck,
   Ticket,
   TrainFront,
@@ -27,6 +28,7 @@ import {
   X,
   XCircle,
 } from "lucide-react";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 
 type SessionUser = {
   id: string;
@@ -309,6 +311,11 @@ export default function Navbar() {
 
   const accountHref = user?.role === "admin" ? "/admin" : "/dashboard";
 
+  // Hide the consumer navbar on all admin console pages
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
+
   return (
     <>
       <style jsx global>{`
@@ -346,7 +353,7 @@ export default function Navbar() {
         }
       `}</style>
 
-      <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/90 shadow-[0_8px_30px_-24px_rgba(15,23,42,0.35)] backdrop-blur-2xl">
+      <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/90 shadow-[0_8px_30px_-24px_rgba(15,23,42,0.35)] backdrop-blur-2xl transition-colors dark:border-slate-800 dark:bg-slate-900/90 dark:shadow-[0_8px_30px_-24px_rgba(0,0,0,0.5)]">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-500/60 to-transparent" />
 
         <nav
@@ -369,17 +376,17 @@ export default function Navbar() {
             </span>
 
             <span className="min-w-0">
-              <span className="block text-lg font-black tracking-tight text-slate-950 sm:text-xl">
-                Rail<span className="text-blue-700">Connect</span>
+              <span className="block text-lg font-black tracking-tight text-slate-950 sm:text-xl dark:text-white">
+                Rail<span className="text-blue-700 dark:text-blue-400">Connect</span>
               </span>
-              <span className="hidden text-[9px] font-bold uppercase tracking-[0.19em] text-slate-500 sm:block">
+              <span className="hidden text-[9px] font-bold uppercase tracking-[0.19em] text-slate-500 sm:block dark:text-slate-400">
                 Your journey, simplified
               </span>
             </span>
           </Link>
 
           {/* DESKTOP NAVIGATION */}
-          <div className="hidden items-center gap-1 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-1.5 lg:flex">
+          <div className="hidden items-center gap-1 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-1.5 lg:flex dark:border-slate-800 dark:bg-slate-950/60">
             {navigation.map(({ label, href, Icon }) => {
               const active =
                 href === "/"
@@ -394,8 +401,8 @@ export default function Navbar() {
                   aria-current={active ? "page" : undefined}
                   className={`group relative flex items-center gap-2 rounded-xl px-3.5 py-2.5 text-[13px] font-semibold transition duration-200 ${
                     active
-                      ? "bg-white text-blue-700 shadow-sm ring-1 ring-slate-200/70"
-                      : "text-slate-600 hover:bg-white hover:text-blue-700 hover:shadow-sm"
+                      ? "bg-white text-blue-700 shadow-sm ring-1 ring-slate-200/70 dark:bg-slate-800 dark:text-blue-400 dark:ring-slate-700"
+                      : "text-slate-600 hover:bg-white hover:text-blue-700 hover:shadow-sm dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-blue-400"
                   }`}
                 >
                   <Icon
@@ -413,7 +420,20 @@ export default function Navbar() {
           </div>
 
           {/* ACCOUNT ACTIONS */}
-          <div className="hidden shrink-0 items-center gap-2 sm:flex">
+          <div className="hidden shrink-0 items-center gap-2.5 sm:flex">
+            {/* THEME SWITCHER */}
+            <ThemeSwitcher />
+
+            {/* ADMIN CONSOLE LINK FOR ADMINS */}
+            {user?.role === "admin" && (
+              <Link
+                href="/admin"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-950/70 dark:text-indigo-300 dark:hover:bg-indigo-900/60"
+              >
+                <Shield size={14} />
+                Admin Console
+              </Link>
+            )}
             {loadingUser ? (
               <div
                 aria-label="Loading account"
@@ -623,13 +643,25 @@ export default function Navbar() {
                       </p>
                     </div>
 
-                    <div className="my-2 h-px bg-slate-100" />
+                    <div className="my-2 h-px bg-slate-100 dark:bg-slate-800" />
+
+                    {user.role === "admin" && (
+                      <Link
+                        href="/admin"
+                        role="menuitem"
+                        onClick={() => setProfileOpen(false)}
+                        className="flex items-center gap-3 rounded-xl bg-indigo-50/80 px-3 py-3 text-sm font-bold text-indigo-700 transition hover:bg-indigo-100 dark:bg-indigo-950/70 dark:text-indigo-300 dark:hover:bg-indigo-900/60"
+                      >
+                        <Shield size={18} />
+                        Admin Console
+                      </Link>
+                    )}
 
                     <Link
                       href={accountHref}
                       role="menuitem"
                       onClick={() => setProfileOpen(false)}
-                      className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-blue-50 hover:text-blue-700"
+                      className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-blue-50 hover:text-blue-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-blue-400"
                     >
                       <UserRound size={18} />
                       My dashboard
@@ -722,6 +754,7 @@ export default function Navbar() {
 
           {/* MOBILE MENU BUTTON */}
           <div className="flex items-center gap-2 sm:hidden">
+            <ThemeSwitcher />
             {user && (
               <>
                 <Link
@@ -801,12 +834,23 @@ export default function Navbar() {
                 <div className="h-11 animate-pulse rounded-xl bg-slate-100" />
               ) : user ? (
                 <>
-                  <div className="rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 p-4">
-                    <p className="font-bold text-slate-900">{user.name}</p>
-                    <p className="mt-1 break-all text-xs text-slate-500">
+                  <div className="rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 p-4 dark:from-slate-800 dark:to-slate-850">
+                    <p className="font-bold text-slate-900 dark:text-white">{user.name}</p>
+                    <p className="mt-1 break-all text-xs text-slate-500 dark:text-slate-400">
                       {user.email}
                     </p>
                   </div>
+
+                  {user.role === "admin" && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center gap-3 rounded-xl bg-indigo-50/80 px-4 py-3 text-sm font-bold text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-950/70 dark:text-indigo-300 dark:hover:bg-indigo-900/60"
+                    >
+                      <Shield size={18} />
+                      Admin Console
+                    </Link>
+                  )}
 
                   <Link
                     href={accountHref}

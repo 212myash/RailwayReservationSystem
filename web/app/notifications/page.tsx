@@ -343,9 +343,9 @@ function NotificationsContent() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 pb-20">
+    <main className="min-h-screen bg-slate-50 pb-20 transition-colors dark:bg-slate-950">
       {/* HEADER HERO */}
-      <section className="bg-gradient-to-br from-blue-950 via-blue-900 to-indigo-800 px-5 py-12 text-white sm:px-8 sm:py-16">
+      <section className="bg-gradient-to-br from-blue-950 via-blue-900 to-indigo-800 px-5 py-12 text-white sm:px-8 sm:py-16 dark:from-slate-950 dark:via-blue-950 dark:to-slate-900">
         <div className="mx-auto max-w-5xl">
           <Link
             href="/"
@@ -449,16 +449,16 @@ function NotificationsContent() {
         {!isLoggedOut && (
           <div className="space-y-6">
             {/* CONTROLS BAR */}
-            <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between dark:border-slate-800 dark:bg-slate-900">
               {/* FILTER TABS */}
-              <div className="flex items-center gap-1.5 rounded-xl bg-slate-100 p-1">
+              <div className="flex items-center gap-1.5 rounded-xl bg-slate-100 p-1 dark:bg-slate-950">
                 <button
                   type="button"
                   onClick={() => handleFilterChange("all")}
                   className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
                     filter === "all"
-                      ? "bg-white text-blue-700 shadow-sm"
-                      : "text-slate-600 hover:text-slate-900"
+                      ? "bg-white text-blue-700 shadow-sm dark:bg-slate-800 dark:text-blue-400"
+                      : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                   }`}
                 >
                   All
@@ -469,8 +469,8 @@ function NotificationsContent() {
                   onClick={() => handleFilterChange("unread")}
                   className={`inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
                     filter === "unread"
-                      ? "bg-white text-blue-700 shadow-sm"
-                      : "text-slate-600 hover:text-slate-900"
+                      ? "bg-white text-blue-700 shadow-sm dark:bg-slate-800 dark:text-blue-400"
+                      : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                   }`}
                 >
                   Unread
@@ -486,8 +486,8 @@ function NotificationsContent() {
                   onClick={() => handleFilterChange("read")}
                   className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition ${
                     filter === "read"
-                      ? "bg-white text-blue-700 shadow-sm"
-                      : "text-slate-600 hover:text-slate-900"
+                      ? "bg-white text-blue-700 shadow-sm dark:bg-slate-800 dark:text-blue-400"
+                      : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                   }`}
                 >
                   Read

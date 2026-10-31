@@ -225,22 +225,22 @@ export default function Home() {
         id="plan-your-trip"
         className="relative z-10 mx-auto -mt-24 max-w-7xl scroll-mt-28 px-4 sm:-mt-28 sm:px-8"
       >
-        <div className="overflow-hidden rounded-[28px] border border-white bg-white shadow-[0_25px_80px_-30px_rgba(15,23,42,0.20)] sm:rounded-[34px]">
-          <div className="flex flex-col justify-between gap-5 border-b border-slate-100 px-5 py-7 sm:px-8 sm:py-9 lg:flex-row lg:items-center lg:px-10">
+        <div className="overflow-hidden rounded-[28px] border border-white bg-white shadow-[0_25px_80px_-30px_rgba(15,23,42,0.20)] transition-colors sm:rounded-[34px] dark:border-slate-800 dark:bg-slate-900 dark:shadow-[0_25px_80px_-30px_rgba(0,0,0,0.6)]">
+          <div className="flex flex-col justify-between gap-5 border-b border-slate-100 px-5 py-7 sm:px-8 sm:py-9 lg:flex-row lg:items-center lg:px-10 dark:border-slate-800">
             <div>
-              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.2em] text-blue-700">
+              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.2em] text-blue-700 dark:text-blue-400">
                 <Sparkles size={15} />
                 Plan your trip
               </div>
-              <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
+              <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl dark:text-white">
                 Where would you like to go?
               </h2>
-              <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
+              <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500 dark:text-slate-400">
                 Enter your route and travel date to find matching trains.
               </p>
             </div>
 
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-4 py-2.5 text-xs font-bold tracking-wide text-blue-800">
+            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-4 py-2.5 text-xs font-bold tracking-wide text-blue-800 dark:border-blue-900/60 dark:bg-blue-950/60 dark:text-blue-300">
               <Ticket size={16} />
               TRAIN RESERVATIONS
             </div>
@@ -269,7 +269,7 @@ export default function Home() {
                 onClick={swapStations}
                 aria-label="Swap departure and destination"
                 title="Swap stations"
-                className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-blue-100 bg-white text-blue-700 shadow-sm transition duration-300 hover:rotate-180 hover:border-blue-300 hover:bg-blue-50 lg:mb-1"
+                className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-blue-100 bg-white text-blue-700 shadow-sm transition duration-300 hover:rotate-180 hover:border-blue-300 hover:bg-blue-50 lg:mb-1 dark:border-slate-800 dark:bg-slate-950 dark:text-blue-400 dark:hover:border-blue-500 dark:hover:bg-slate-800"
               >
                 <ArrowLeftRight size={19} />
               </button>
@@ -293,11 +293,11 @@ export default function Home() {
               <div className="min-w-0">
                 <label
                   htmlFor="journeyDate"
-                  className="mb-2.5 block text-sm font-bold text-slate-700"
+                  className="mb-2.5 block text-sm font-bold text-slate-700 dark:text-slate-300"
                 >
                   Journey date
                 </label>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 transition duration-200 focus-within:border-blue-400 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(37,99,235,0.08)] hover:border-slate-300">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 transition duration-200 focus-within:border-blue-400 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(37,99,235,0.08)] hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950/80 dark:hover:border-slate-700">
                   <input
                     id="journeyDate"
                     type="date"
@@ -305,9 +305,9 @@ export default function Home() {
                     required
                     value={journeyDate}
                     onChange={(event) => setJourneyDate(event.target.value)}
-                    className="w-full min-w-0 bg-transparent text-sm font-bold text-slate-900 outline-none"
+                    className="w-full min-w-0 bg-transparent text-sm font-bold text-slate-900 outline-none dark:text-white"
                   />
-                  <p className="mt-2 flex items-center gap-1.5 text-xs text-slate-400">
+                  <p className="mt-2 flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500">
                     <CalendarDays size={14} />
                     Select travel date
                   </p>
@@ -318,28 +318,28 @@ export default function Home() {
               <div className="min-w-0">
                 <label
                   htmlFor="passengers"
-                  className="mb-2.5 block text-sm font-bold text-slate-700"
+                  className="mb-2.5 block text-sm font-bold text-slate-700 dark:text-slate-300"
                 >
                   Passengers
                 </label>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 transition duration-200 focus-within:border-blue-400 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(37,99,235,0.08)] hover:border-slate-300">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 transition duration-200 focus-within:border-blue-400 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(37,99,235,0.08)] hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950/80 dark:hover:border-slate-700">
                   <div className="flex items-center gap-2">
-                    <Users size={17} className="shrink-0 text-blue-600" />
+                    <Users size={17} className="shrink-0 text-blue-600 dark:text-blue-400" />
                     <select
                       id="passengers"
                       value={passengers}
                       onChange={(event) => setPassengers(event.target.value)}
-                      className="w-full min-w-0 appearance-none bg-transparent text-sm font-bold text-slate-900 outline-none"
+                      className="w-full min-w-0 appearance-none bg-transparent text-sm font-bold text-slate-900 outline-none dark:text-white"
                     >
                       {[1, 2, 3, 4, 5, 6].map((count) => (
-                        <option key={count} value={count}>
+                        <option key={count} value={count} className="dark:bg-slate-900 dark:text-white">
                           {count} passenger{count > 1 ? "s" : ""}
                         </option>
                       ))}
                     </select>
-                    <ChevronDown size={15} className="shrink-0 text-slate-400" />
+                    <ChevronDown size={15} className="shrink-0 text-slate-400 dark:text-slate-500" />
                   </div>
-                  <p className="mt-2 text-xs text-slate-400">
+                  <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
                     Up to 6 passengers
                   </p>
                 </div>
@@ -349,20 +349,20 @@ export default function Home() {
             {error && (
               <p
                 role="alert"
-                className="mt-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+                className="mt-5 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/50 dark:text-red-300"
               >
                 {error}
               </p>
             )}
 
-            <div className="mt-7 flex flex-col gap-5 border-t border-slate-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
-              <p className="flex items-start gap-2 text-sm leading-6 text-slate-500">
+            <div className="mt-7 flex flex-col gap-5 border-t border-slate-100 pt-6 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
+              <p className="flex items-start gap-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
                 <ShieldCheck
                   size={18}
-                  className="mt-0.5 shrink-0 text-emerald-600"
+                  className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400"
                 />
                 <span>
-                  <span className="font-bold text-slate-700">
+                  <span className="font-bold text-slate-700 dark:text-slate-200">
                     Ready to travel?
                   </span>
                   <br className="hidden sm:block" /> Choose your route and date
@@ -385,44 +385,44 @@ export default function Home() {
             </div>
           </form>
 
-          <div className="grid border-t border-slate-100 bg-slate-50/70 sm:grid-cols-3">
-            <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4 sm:border-b-0 sm:border-r sm:px-7">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-blue-700 shadow-sm">
+          <div className="grid border-t border-slate-100 bg-slate-50/70 sm:grid-cols-3 dark:border-slate-800 dark:bg-slate-950/50">
+            <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4 sm:border-b-0 sm:border-r sm:px-7 dark:border-slate-800">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-blue-700 shadow-sm dark:bg-slate-800 dark:text-blue-400">
                 <TrainFront size={19} />
               </span>
               <div>
-                <p className="text-sm font-bold text-slate-800">
+                <p className="text-sm font-bold text-slate-800 dark:text-white">
                   Simple search
                 </p>
-                <p className="mt-0.5 text-xs text-slate-500">
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                   Enter your route
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4 sm:border-b-0 sm:border-r sm:px-7">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-indigo-700 shadow-sm">
+            <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4 sm:border-b-0 sm:border-r sm:px-7 dark:border-slate-800">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-indigo-700 shadow-sm dark:bg-slate-800 dark:text-indigo-400">
                 <Clock3 size={19} />
               </span>
               <div>
-                <p className="text-sm font-bold text-slate-800">
+                <p className="text-sm font-bold text-slate-800 dark:text-white">
                   Plan ahead
                 </p>
-                <p className="mt-0.5 text-xs text-slate-500">
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                   Select your travel date
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-3 px-5 py-4 sm:px-7">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-700 shadow-sm">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-700 shadow-sm dark:bg-slate-800 dark:text-emerald-400">
                 <Check size={19} />
               </span>
               <div>
-                <p className="text-sm font-bold text-slate-800">
+                <p className="text-sm font-bold text-slate-800 dark:text-white">
                   Easy planning
                 </p>
-                <p className="mt-0.5 text-xs text-slate-500">
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                   Choose your passengers
                 </p>
               </div>
@@ -435,16 +435,16 @@ export default function Home() {
       <section className="mx-auto max-w-7xl px-5 pb-20 pt-20 sm:px-8 sm:pb-24 sm:pt-24">
         <div className="mb-9 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.2em] text-blue-700">
+            <p className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.2em] text-blue-700 dark:text-blue-400">
               <Sparkles size={15} />
               Built around your journey
             </p>
-            <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl dark:text-white">
               Everything you need.
               <br className="hidden sm:block" /> All in one place.
             </h2>
           </div>
-          <p className="max-w-md text-sm leading-7 text-slate-500">
+          <p className="max-w-md text-sm leading-7 text-slate-500 dark:text-slate-400">
             Find routes, plan your travel and access your booking options
             through a simple, modern interface.
           </p>
@@ -455,28 +455,28 @@ export default function Home() {
             <Link
               key={number}
               href={href}
-              className="group relative overflow-hidden rounded-[26px] border border-slate-200/80 bg-white p-6 shadow-[0_8px_30px_-25px_rgba(15,23,42,0.2)] transition duration-300 hover:-translate-y-1.5 hover:border-blue-200 hover:shadow-[0_25px_45px_-25px_rgba(37,99,235,0.25)]"
+              className="group relative overflow-hidden rounded-[26px] border border-slate-200/80 bg-white p-6 shadow-[0_8px_30px_-25px_rgba(15,23,42,0.2)] transition duration-300 hover:-translate-y-1.5 hover:border-blue-200 hover:shadow-[0_25px_45px_-25px_rgba(37,99,235,0.25)] dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-500"
             >
-              <div className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-blue-100/70 opacity-0 blur-2xl transition duration-500 group-hover:opacity-100" />
+              <div className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-blue-100/70 opacity-0 blur-2xl transition duration-500 group-hover:opacity-100 dark:bg-blue-500/10" />
 
               <div className="relative flex items-center justify-between">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-700 ring-1 ring-blue-100 transition duration-300 group-hover:bg-blue-700 group-hover:text-white group-hover:shadow-lg group-hover:shadow-blue-700/20">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-700 ring-1 ring-blue-100 transition duration-300 group-hover:bg-blue-700 group-hover:text-white group-hover:shadow-lg group-hover:shadow-blue-700/20 dark:bg-blue-950/60 dark:text-blue-300 dark:ring-blue-800">
                   <Icon size={24} strokeWidth={1.8} />
                 </span>
-                <span className="text-sm font-extrabold tracking-wider text-slate-300 transition group-hover:text-blue-600">
+                <span className="text-sm font-extrabold tracking-wider text-slate-300 transition group-hover:text-blue-600 dark:text-slate-600 dark:group-hover:text-blue-400">
                   {number}
                 </span>
               </div>
 
-              <h3 className="relative mt-7 text-lg font-extrabold tracking-tight text-slate-900 transition group-hover:text-blue-700">
+              <h3 className="relative mt-7 text-lg font-extrabold tracking-tight text-slate-900 transition group-hover:text-blue-700 dark:text-white dark:group-hover:text-blue-400">
                 {title}
               </h3>
 
-              <p className="relative mt-2 min-h-[48px] text-sm leading-6 text-slate-500">
+              <p className="relative mt-2 min-h-[48px] text-sm leading-6 text-slate-500 dark:text-slate-400">
                 {description}
               </p>
 
-              <div className="relative mt-6 flex items-center gap-2 text-sm font-bold text-blue-700">
+              <div className="relative mt-6 flex items-center gap-2 text-sm font-bold text-blue-700 dark:text-blue-400">
                 Explore
                 <ArrowUpRight
                   size={17}

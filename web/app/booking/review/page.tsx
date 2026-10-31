@@ -209,7 +209,7 @@ function BookingReviewContent() {
 
       if (!bookingResponse.ok || !bookingData.success) {
         setErrorMessage(
-          bookingData.message || "Booking save nahi ho payi. Dobara try karo.",
+          bookingData.message || "Unable to save booking. Please try again.",
         );
         return;
       }
@@ -218,7 +218,7 @@ function BookingReviewContent() {
 
       if (!reference) {
         setErrorMessage(
-          "Booking response mein reference nahi mila. My Bookings check karo.",
+          "Booking confirmation reference not found. Please verify your bookings.",
         );
         return;
       }
@@ -229,7 +229,7 @@ function BookingReviewContent() {
       console.error("Booking submission failed:", error);
 
       setErrorMessage(
-        "Server se connect nahi ho paya. Please dobara try karo.",
+        "Unable to connect to the server. Please try again.",
       );
     } finally {
       setIsSubmitting(false);
@@ -237,11 +237,11 @@ function BookingReviewContent() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 pb-12">
+    <main className="min-h-screen bg-slate-50 pb-12 transition-colors dark:bg-slate-950">
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         <Link
           href="/trains"
-          className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-blue-700"
+          className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-blue-700 dark:text-slate-400 dark:hover:text-blue-400"
         >
           <ArrowLeft size={17} />
           Back to trains
@@ -252,11 +252,11 @@ function BookingReviewContent() {
             RailConnect booking
           </p>
 
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl dark:text-white">
             Review your journey
           </h1>
 
-          <p className="mt-2 text-slate-600">
+          <p className="mt-2 text-slate-600 dark:text-slate-400">
             Check your train, passenger and seat details before proceeding.
           </p>
         </div>
@@ -271,15 +271,15 @@ function BookingReviewContent() {
               key={step.number}
               className={`rounded-xl border p-3 sm:p-4 ${
                 index === 2
-                  ? "border-blue-200 bg-blue-50"
-                  : "border-slate-200 bg-white"
+                  ? "border-blue-200 bg-blue-50 dark:border-blue-900/60 dark:bg-blue-950/40"
+                  : "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
               }`}
             >
               <div className="flex items-center gap-2">
                 {step.complete ? (
                   <CheckCircle2
                     size={19}
-                    className="shrink-0 text-emerald-600"
+                    className="shrink-0 text-emerald-600 dark:text-emerald-400"
                   />
                 ) : (
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-700 text-xs font-bold text-white">
@@ -287,12 +287,12 @@ function BookingReviewContent() {
                   </span>
                 )}
 
-                <span className="text-xs font-semibold text-slate-500">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                   STEP {step.number}
                 </span>
               </div>
 
-              <p className="mt-2 text-sm font-semibold text-slate-900">
+              <p className="mt-2 text-sm font-semibold text-slate-900 dark:text-white">
                 {step.label}
               </p>
             </div>
@@ -301,15 +301,15 @@ function BookingReviewContent() {
 
         <div className="grid items-start gap-6 lg:grid-cols-[1fr_340px]">
           <div className="space-y-6">
-            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
-                <div className="rounded-xl bg-blue-50 p-2.5 text-blue-700">
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4 dark:border-slate-800 dark:bg-slate-950/60">
+                <div className="rounded-xl bg-blue-50 p-2.5 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
                   <TrainFront size={22} />
                 </div>
 
                 <div>
-                  <h2 className="font-bold text-slate-900">Train details</h2>
-                  <p className="text-sm text-slate-500">
+                  <h2 className="font-bold text-slate-900 dark:text-white">Train details</h2>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
                     Your selected journey
                   </p>
                 </div>

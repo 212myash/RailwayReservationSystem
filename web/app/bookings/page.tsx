@@ -79,7 +79,7 @@ function MyBookingsContent() {
       setBookingToCancel(null);
     } catch (error) {
       console.error("Unable to cancel booking:", error);
-      setCancelMessage("Server se connect nahi ho paya. Dobara try karo.");
+      setCancelMessage("Unable to connect to the server. Please try again.");
     } finally {
       setCancellingId(null);
     }
@@ -104,14 +104,14 @@ function MyBookingsContent() {
       }
 
       if (!response.ok || !data.success) {
-        setErrorMessage(data.message || "Bookings load nahi ho paayi.");
+        setErrorMessage(data.message || "Unable to load bookings.");
         return;
       }
 
       setBookings(Array.isArray(data.bookings) ? data.bookings : []);
     } catch (error) {
       console.error("Unable to load bookings:", error);
-      setErrorMessage("Server se connect nahi ho paya. Dobara try karo.");
+      setErrorMessage("Unable to connect to the server. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -145,11 +145,11 @@ function MyBookingsContent() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 pb-14">
+    <main className="min-h-screen bg-slate-50 pb-14 transition-colors dark:bg-slate-950">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <Link
           href="/"
-          className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-blue-700"
+          className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-blue-700 dark:text-slate-400 dark:hover:text-blue-400"
         >
           <ArrowLeft size={17} />
           Back to home
@@ -157,13 +157,13 @@ function MyBookingsContent() {
 
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-700">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-700 dark:text-blue-400">
               RailConnect
             </p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl dark:text-white">
               My Bookings
             </h1>
-            <p className="mt-2 text-slate-600">
+            <p className="mt-2 text-slate-600 dark:text-slate-400">
               View your journey details and booking history.
             </p>
           </div>
@@ -172,7 +172,7 @@ function MyBookingsContent() {
             type="button"
             onClick={() => void loadBookings()}
             disabled={isLoading}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
             Refresh
@@ -299,18 +299,18 @@ function MyBookingsContent() {
             {bookings.map((booking) => (
               <article
                 key={booking.id || booking.bookingReference}
-                className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+                className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
               >
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4 dark:border-slate-800 dark:bg-slate-950/60">
                   <div className="flex items-center gap-3">
-                    <div className="rounded-xl bg-blue-50 p-2.5 text-blue-700">
+                    <div className="rounded-xl bg-blue-50 p-2.5 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400">
                       <Ticket size={22} />
                     </div>
                     <div>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
                         Booking reference
                       </p>
-                      <p className="font-bold text-slate-900">
+                      <p className="font-bold text-slate-900 dark:text-white">
                         {booking.bookingReference}
                       </p>
                     </div>
@@ -319,8 +319,8 @@ function MyBookingsContent() {
                   <span
                     className={`rounded-full px-3 py-1.5 text-xs font-bold ${
                       booking.status === "confirmed"
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "bg-red-50 text-red-700"
+                        ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
+                        : "bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-300"
                     }`}
                   >
                     {booking.status === "confirmed" ? "Confirmed" : "Cancelled"}
@@ -330,17 +330,17 @@ function MyBookingsContent() {
                 <div className="p-5">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                      <h2 className="text-lg font-bold text-slate-900">
+                      <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                         {booking.trainName}
                       </h2>
-                      <p className="mt-1 text-sm text-slate-500">
+                      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                         Train No. {booking.trainNumber}
                       </p>
                     </div>
 
-                    <div className="rounded-xl bg-slate-50 px-3 py-2">
-                      <p className="text-xs text-slate-500">Total fare</p>
-                      <p className="mt-1 text-lg font-bold text-blue-700">
+                    <div className="rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-950/60">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Total fare</p>
+                      <p className="mt-1 text-lg font-bold text-blue-700 dark:text-blue-400">
                         {money(booking.totalFare)}
                       </p>
                     </div>
@@ -348,35 +348,35 @@ function MyBookingsContent() {
 
                   <div className="my-6 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
                     <div>
-                      <p className="break-words text-lg font-bold text-slate-900">
+                      <p className="break-words text-lg font-bold text-slate-900 dark:text-white">
                         {booking.from}
                       </p>
-                      <p className="mt-1 text-xs text-slate-500">From</p>
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">From</p>
                     </div>
 
-                    <div className="flex flex-col items-center text-blue-600">
-                      <div className="h-px w-10 bg-blue-200 sm:w-16" />
+                    <div className="flex flex-col items-center text-blue-600 dark:text-blue-400">
+                      <div className="h-px w-10 bg-blue-200 sm:w-16 dark:bg-blue-800" />
                       <TrainFront size={20} className="my-1" />
-                      <div className="h-px w-10 bg-blue-200 sm:w-16" />
+                      <div className="h-px w-10 bg-blue-200 sm:w-16 dark:bg-blue-800" />
                     </div>
 
                     <div className="text-right">
-                      <p className="break-words text-lg font-bold text-slate-900">
+                      <p className="break-words text-lg font-bold text-slate-900 dark:text-white">
                         {booking.to}
                       </p>
-                      <p className="mt-1 text-xs text-slate-500">To</p>
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">To</p>
                     </div>
                   </div>
 
-                  <div className="grid gap-4 border-t border-slate-100 pt-5 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="grid gap-4 border-t border-slate-100 pt-5 sm:grid-cols-2 lg:grid-cols-4 dark:border-slate-800">
                     <div className="flex items-start gap-2.5">
                       <CalendarDays
                         size={18}
-                        className="mt-0.5 shrink-0 text-slate-500"
+                        className="mt-0.5 shrink-0 text-slate-500 dark:text-slate-400"
                       />
                       <div>
-                        <p className="text-xs text-slate-500">Journey date</p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Journey date</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
                           {formatDate(booking.journeyDate)}
                         </p>
                       </div>
@@ -385,11 +385,11 @@ function MyBookingsContent() {
                     <div className="flex items-start gap-2.5">
                       <Users
                         size={18}
-                        className="mt-0.5 shrink-0 text-slate-500"
+                        className="mt-0.5 shrink-0 text-slate-500 dark:text-slate-400"
                       />
                       <div>
-                        <p className="text-xs text-slate-500">Passengers</p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Passengers</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
                           {booking.passengerCount}
                         </p>
                       </div>
@@ -398,11 +398,11 @@ function MyBookingsContent() {
                     <div className="flex items-start gap-2.5">
                       <Ticket
                         size={18}
-                        className="mt-0.5 shrink-0 text-slate-500"
+                        className="mt-0.5 shrink-0 text-slate-500 dark:text-slate-400"
                       />
                       <div>
-                        <p className="text-xs text-slate-500">Coach / seats</p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Coach / seats</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
                           {booking.coach} / {booking.seats.join(", ")}
                         </p>
                       </div>
@@ -411,11 +411,11 @@ function MyBookingsContent() {
                     <div className="flex items-start gap-2.5">
                       <Wallet
                         size={18}
-                        className="mt-0.5 shrink-0 text-slate-500"
+                        className="mt-0.5 shrink-0 text-slate-500 dark:text-slate-400"
                       />
                       <div>
-                        <p className="text-xs text-slate-500">Fare</p>
-                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Fare</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
                           {money(booking.totalFare)}
                         </p>
                       </div>
@@ -423,20 +423,20 @@ function MyBookingsContent() {
                   </div>
 
                   {booking.passengers?.length > 0 && (
-                    <details className="mt-5 rounded-xl border border-slate-200">
-                      <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                    <details className="mt-5 rounded-xl border border-slate-200 dark:border-slate-800">
+                      <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800">
                         View passenger details
                       </summary>
-                      <div className="divide-y divide-slate-100 px-4">
+                      <div className="divide-y divide-slate-100 px-4 dark:divide-slate-800">
                         {booking.passengers.map((passenger, index) => (
                           <div
                             key={`${passenger.name}-${index}`}
                             className="py-3"
                           >
-                            <p className="text-sm font-semibold text-slate-900">
+                            <p className="text-sm font-semibold text-slate-900 dark:text-white">
                               {index + 1}. {passenger.name}
                             </p>
-                            <p className="mt-1 text-xs text-slate-500">
+                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                               Age: {passenger.age} · {passenger.gender}
                             </p>
                           </div>
@@ -445,11 +445,11 @@ function MyBookingsContent() {
                     </details>
                   )}
 
-                  <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5">
+                  <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5 dark:border-slate-800">
                     <div className="flex flex-wrap items-center gap-3">
                       <Link
                         href={`/pnr-status?pnr=${encodeURIComponent(booking.bookingReference)}`}
-                        className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 transition hover:text-blue-900 hover:underline"
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 transition hover:text-blue-900 hover:underline dark:text-blue-400"
                       >
                         <Search size={14} />
                         Track PNR Status
@@ -458,7 +458,7 @@ function MyBookingsContent() {
                       <a
                         href={`/api/bookings/${encodeURIComponent(booking.id)}/ticket`}
                         download={`RailConnect_Ticket_${booking.bookingReference}.pdf`}
-                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-50/50 hover:text-blue-700"
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-50/50 hover:text-blue-700 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-blue-400"
                       >
                         <Download size={14} />
                         Download E-Ticket (PDF)
@@ -470,7 +470,7 @@ function MyBookingsContent() {
                         type="button"
                         onClick={() => { setCancelMessage(""); setBookingToCancel(booking); }}
                         disabled={cancellingId !== null}
-                        className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-700 transition hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-700 transition hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300 dark:hover:bg-red-900/50"
                       >
                         <XCircle size={17} />
                         {cancellingId === booking.id ? "Cancelling..." : "Cancel booking"}
